@@ -2,9 +2,9 @@
 * { box-sizing: border-box; }
 body { margin: 0; line-height: 1.6; }
 a { color: inherit; text-decoration: none; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { cursor: pointer; }
-button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #476b9e; outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #476b9e; outline-offset: 3px; }
 .container { width: min(1100px, calc(100% - 48px)); margin: 0 auto; }
 .skip { position: absolute; top: -100px; left: 16px; background: #fff; padding: 8px; z-index: 10; }
 .skip:focus { top: 8px; }
@@ -24,6 +24,12 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .filter { border: 0; background: transparent; border-radius: 5px; padding: 9px 12px; text-align: left; color: #626d79; font-size: 14px; }
 .filter:hover { background: #f6f8fa; color: #20252c; }
 .filter.active { background: #f0f4f8; color: #315b8d; font-weight: 700; }
+.write-area { margin-bottom: 35px; padding: 16px; border: 1px solid #e5e9ed; border-radius: 5px; font-size: 14px; }
+.write-area label { margin-right: 8px; font-weight: 600; }
+.write-area select { padding: 7px 9px; max-width: 100%; border: 1px solid #dfe3e7; border-radius: 5px; background: #fff; color: inherit; }
+.write-link { display: inline-block; margin-left: 6px; padding: 8px 14px; border-radius: 5px; color: #fff; background: #315b8d; }
+.write-link:hover { background: #254a76; }
+.write-area p, #load-status { margin: 10px 0 0; color: #68727e; font-size: 13px; }
 .archive-header { display: flex; justify-content: space-between; align-items: end; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid #dfe3e7; }
 .archive-header h2 { margin: 0; font-size: 21px; letter-spacing: -.03em; }
 .archive-header p { margin: 3px 0 0; color: #89919c; font-size: 13px; }
@@ -42,6 +48,12 @@ dialog::backdrop { background: #131c2a88; }
 .dialog-category { margin: 0 0 8px; color: #5276a1; font-size: 13px; }
 dialog h2 { margin: 0 0 24px; font-size: 26px; line-height: 1.4; letter-spacing: -.03em; }
 .dialog-text p { margin: 0 0 18px; color: #4f5964; line-height: 1.8; }
+.dialog-text p { white-space: pre-line; overflow-wrap: anywhere; }
+.dialog-text a, .edit-link { color: #315b8d; text-decoration: underline; overflow-wrap: anywhere; }
+.dialog-text pre { overflow-x: auto; padding: 16px; background: #f5f7f9; border-radius: 5px; }
+.dialog-text code { font-family: ui-monospace, Consolas, monospace; }
+.post-image { display: block; max-width: 100%; height: auto; margin: 16px 0; }
+.edit-link { display: inline-block; margin-top: 12px; font-size: 14px; }
 @media (max-width: 700px) {
   .container { width: min(100% - 36px, 1100px); }
   .header-inner { height: 64px; }
@@ -52,6 +64,7 @@ dialog h2 { margin: 0 0 24px; font-size: 26px; line-height: 1.4; letter-spacing:
   .filter { padding: 7px 10px; border: 1px solid #e5e9ed; font-size: 13px; }
   .filter.active { border-color: #d5e0ec; }
   .archive-header { align-items: center; }
+  .write-area label { display: block; margin: 0 0 6px; }
   .search input { width: 130px; }
   dialog { padding: 48px 24px 30px; }
 }
