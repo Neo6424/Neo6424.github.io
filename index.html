@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="개발과 보안을 탐구하고 배운 것을 기록하는 개인 기술 블로그">
+  <meta name="theme-color" content="#101511">
+  <title>FIELD NOTES — 개발과 보안의 기록</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="posts.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
+<header class="header wrap">
+  <a class="brand" href="#top" aria-label="FIELD NOTES 홈"><span class="brand-mark">✳</span><span>FIELD<br>NOTES<span class="brand-dot">.</span></span></a>
+  <nav aria-label="주 메뉴"><a href="#archive">아카이브</a><a href="#topics">주제</a><a href="#about">소개</a></nav>
+  <a class="header-link" href="#archive">기록 살펴보기 <span aria-hidden="true">↗</span></a>
+</header>
+<main id="content">
+  <section class="hero wrap" id="top">
+    <div class="hero-main"><p class="eyebrow"><span class="pulse"></span> A PERSONAL KNOWLEDGE ARCHIVE</p>
+      <h1>궁금한 것을<br><em>끝까지</em> 파고듭니다<span class="point">.</span></h1>
+      <p class="hero-copy">코드를 만들고, 시스템을 탐구하고, 배운 것을 나눕니다.<br>작은 발견들이 쌓여 나만의 지도가 되는 곳.</p>
+      <div class="hero-actions"><a class="button" href="#archive">기록 둘러보기 <span aria-hidden="true">↘</span></a><a class="text-link" href="#about">이 공간에 대하여 <span aria-hidden="true">↗</span></a></div>
+    </div>
+    <div class="hero-art" aria-hidden="true"><div class="art-top"><span>INDEX / 001—006</span><span>✳</span></div><div class="orb"><div class="orb-inner">KEEP<br>EXPLORING<span>✳</span></div></div><div class="art-bottom"><span>NOTES ON<br>CODE &amp; SECURITY</span><span>✺<br>EST. NOW</span></div></div>
+    <div class="hero-footer"><span>생각하고, 만들고, 기록하기</span><span>SCROLL TO EXPLORE ↓</span></div>
+  </section>
+  <section class="topics" id="topics"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">01 / EXPLORE</p><h2>관심사를 따라<span class="point">.</span></h2></div><p>여섯 개의 주제, 하나의 탐구.</p></div><div class="topic-grid" id="topic-grid"></div></div></section>
+  <section class="archive wrap" id="archive"><div class="section-heading"><div><p class="eyebrow">02 / THE ARCHIVE</p><h2>기록 모아보기<span class="point">.</span></h2></div><p>배운 것을 내 언어로 정리합니다.</p></div>
+    <div class="archive-controls"><div class="filter-list" id="filters" role="group" aria-label="카테고리 필터"></div><label class="search"><span aria-hidden="true">⌕</span><span class="sr-only">기록 검색</span><input id="search" type="search" placeholder="기록 검색"></label></div>
+    <p class="result-count" id="result-count" aria-live="polite"></p><div class="post-list" id="post-list"></div><p class="empty" id="empty" hidden>일치하는 기록이 없습니다. 다른 검색어나 주제를 선택해 보세요.</p>
+  </section>
+  <section class="about" id="about"><div class="wrap about-layout"><div><p class="eyebrow">03 / ABOUT THIS SPACE</p><h2>호기심에서 시작해<br><em>기록으로 남깁니다.</em></h2></div><div class="about-copy"><p>안녕하세요. 개발과 보안에 관심을 갖고 배우는 사람입니다. 이곳은 문제를 풀며 발견한 것, 새롭게 이해한 개념, 그리고 앞으로 더 알아보고 싶은 질문을 모아두는 개인 아카이브입니다.</p><p>완벽한 답보다 배워가는 과정을 소중히 생각합니다. 한 줄의 메모에서 시작한 기록이 언젠가 누군가에게도 작은 실마리가 되기를 바랍니다.</p><span class="signature">Always learning, always building. ✳</span></div></div></section>
+</main>
+<footer class="footer wrap"><a class="brand" href="#top"><span class="brand-mark">✳</span><span>FIELD<br>NOTES<span class="brand-dot">.</span></span></a><p>코드와 보안, 그리고 그 사이의 모든 배움.</p><a href="#top">맨 위로 ↑</a><small>© FIELD NOTES · BUILT TO KEEP LEARNING</small></footer>
+<dialog id="post-dialog" aria-labelledby="dialog-title"><button class="dialog-close" type="button" aria-label="글 닫기">✕</button><div id="dialog-content"></div></dialog>
+</body></html>
