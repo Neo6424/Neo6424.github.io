@@ -86,3 +86,78 @@ dialog h2 { margin: 0 0 24px; font-size: 26px; line-height: 1.4; letter-spacing:
   .write-link { margin-left: 0; margin-top: 8px; }
   .search input { width: 110px; }
 }
+
+/* A few quiet details give the archive its own visual identity. */
+body {
+  background: radial-gradient(ellipse at 80% 0, #e8effb 0, transparent 36rem), #f6f8fb;
+}
+.site-header { border-bottom-color: #dfe7f1; }
+.site-title { display: inline-flex; align-items: center; gap: 10px; }
+.site-title::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: #456fa5;
+  box-shadow: 4px 4px 0 #c9d9ec;
+}
+.github-link { padding: 7px 12px; border: 1px solid #e0e7f0; border-radius: 8px; background: #fff; }
+.github-link:hover { background: #f5f8fc; border-color: #c7d7e9; }
+.intro {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 156px;
+  margin: 34px 0 26px;
+  padding: 37px 40px;
+  border: 1px solid #dbe5f2;
+  border-radius: 16px;
+  background: linear-gradient(110deg, #fff 0%, #f5f8fe 57%, #e8f0fb 100%);
+  box-shadow: 0 8px 28px #3658810a;
+}
+.intro::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 230px;
+  height: 230px;
+  top: -37px;
+  right: 45px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0 28px, #789cc82b 29px 30px);
+}
+.intro::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 100px;
+  height: 100px;
+  right: 22px;
+  bottom: -32px;
+  background-image: radial-gradient(#789bc86b 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+}
+.intro h1 { color: #1c304d; }
+.intro h1::after { width: 45px; background: linear-gradient(90deg, #426fa8, #a0bde0); }
+.sidebar, .archive { border-color: #e0e7f0; box-shadow: 0 8px 24px #243f6009; }
+.sidebar h2 { color: #647893; font-weight: 700; }
+.filter { transition: background-color .18s ease, color .18s ease; }
+.filter.active { box-shadow: inset 3px 0 #5b84b7; }
+.archive { position: relative; overflow: hidden; }
+.archive::before { content: ''; display: block; position: absolute; top: 0; left: 28px; width: 52px; height: 3px; border-radius: 0 0 3px 3px; background: #6f95c3; }
+.write-area { background: linear-gradient(115deg, #f1f6fc, #f8faff); border-color: #e0eaf5; }
+.write-link { box-shadow: 0 3px 8px #315f9129; transition: background-color .18s ease, box-shadow .18s ease; }
+.write-link:hover { box-shadow: 0 4px 12px #315f9138; }
+.post { position: relative; padding-right: 40px; }
+.post::after { content: '\2197'; position: absolute; right: 8px; top: 25px; color: #8ba0b9; font-size: 18px; transition: color .18s ease, transform .18s ease; }
+.post:hover::after { color: #315f91; transform: translate(2px, -2px); }
+.post-category { display: inline-block; padding: 2px 8px; border-radius: 5px; background: #edf3fa; color: #426b98; }
+@media (max-width: 700px) {
+  .intro { min-height: 126px; margin: 22px 0 20px; padding: 28px 24px; }
+  .intro::before { width: 170px; height: 170px; top: -22px; right: -12px; opacity: .65; }
+  .intro::after { right: 0; opacity: .55; }
+  .archive::before { left: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .filter, .write-link, .post::after { transition: none; }
+}
