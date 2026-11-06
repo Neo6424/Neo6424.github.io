@@ -165,7 +165,6 @@ const categoryDirectories = [
   ['blog', '블로그/기술문서'], ['paper', '논문/컨퍼런스'], ['contest', '공모전/자격증']
 ];
 const projectDirectories = {
-  'secure-coding': {title:'Secure Coding', description:'CSRF·XSS 등을 고려한 Django 교육용 중고거래 서비스', url:'https://github.com/Neo6424/Secure_coding_HW'},
   evidencebridge: {title:'EvidenceBridge', description:'합성 로그와 SHA-256 기반 디지털 증거 무결성 검증 데모', url:'https://github.com/Neo6424/evidencebridge'}
 };
 function promptPath(path = cwd) { return path === HOME ? '~' : path.startsWith(HOME + '/') ? '~' + path.slice(HOME.length) : path; }
@@ -334,7 +333,7 @@ function runTerminalCommand(value) {
   switch (verb) {
     case 'help': showHelp(); break;
     case 'pwd': printTerminal(cwd); break;
-    case 'tree': printTerminal('/\n└── home/\n    └── neo6424/\n        ├── projects/\n        │   ├── secure-coding/\n        │   │   └── README.md\n        │   └── evidencebridge/\n        │       └── README.md\n        └── posts/\n            ├── dev/          개발\n            ├── ctf/          CTF/Wargame\n            ├── bounty/       Bug Bounty\n            ├── blog/         블로그/기술문서\n            ├── paper/        논문/컨퍼런스\n            └── contest/      공모전/자격증'); break;
+    case 'tree': printTerminal('/\n└── home/\n    └── neo6424/\n        ├── projects/\n        │   └── evidencebridge/\n        │       └── README.md\n        └── posts/\n            ├── dev/          개발\n            ├── ctf/          CTF/Wargame\n            ├── bounty/       Bug Bounty\n            ├── blog/         블로그/기술문서\n            ├── paper/        논문/컨퍼런스\n            └── contest/      공모전/자격증'); break;
     case 'ls': { const target=resolveDirectory(arg || '.'); if (!target) { printTerminal(`ls: 디렉터리를 찾을 수 없습니다: ${arg}`); break; } showDirectory(target); break; }
     case 'cd': { const target=resolveDirectory(arg || '~'); if (!target) { printTerminal(`cd: 디렉터리를 찾을 수 없습니다: ${arg}`); break; } cwd=target; updatePrompt(); search.value=''; selectCategory(categoryForPath(cwd) || '전체',{focusFilter:false}); showDirectory(cwd); break; }
     case 'cat': {
