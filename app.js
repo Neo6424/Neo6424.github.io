@@ -355,6 +355,19 @@ function runTerminalCommand(value) {
     default: printTerminal('알 수 없는 명령어입니다. help로 사용 가능한 명령어를 확인하세요.');
   }
 }
+// The cat only starts chatting after the visitor enters the blog.
+let catChatStarted = false;
+function startHeaderCat() {
+  const speech = $('#header-cat-speech');
+  if (!speech || catChatStarted) return;
+  catChatStarted = true;
+  const messages = ['천천히 둘러보세요, 냥.', '오늘도 좋은 발견이 있길!', '잠깐 쉬어가도 좋아요.', '궁금하면 help를 입력해 보세요.'];
+  let messageIndex = 0;
+  window.setInterval(() => {
+    if (document.hidden) return;
+    speech.textContent = messages[messageIndex++ % messages.length];
+  }, 30000);
+}
 $('#entry-form').addEventListener('submit', event => {
   event.preventDefault();
   const entryCommand = entryInput.value.trim();
@@ -367,7 +380,7 @@ $('#entry-form').addEventListener('submit', event => {
   }
   if (entryCommand === 'ssh cat@blog') { window.location.assign('./secret.html'); return; }
   if (entryCommand !== 'ssh neo6424@blog') { entryError.className='entry-error'; entryError.textContent='알 수 없는 명령어입니다. help로 접속 형식을 확인하세요.'; entryInput.focus(); return; }
-  entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
+  entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); startHeaderCat(); terminalInput.focus();
 });
 // Tab completion only inspects the blog's virtual tree; it never executes shell commands.
 const completionCommands = ['cat', 'cd', 'clear', 'help', 'ls', 'open', 'posts', 'pwd', 'search', 'tree'];
