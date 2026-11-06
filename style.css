@@ -31,7 +31,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .entry-eyebrow::before { content: '>_ '; color: #abc5b1; }
 .entry-content h1 { margin: 0; color: #edf8f0; font-size: clamp(27px, 4vw, 40px); letter-spacing: -.04em; }
 .entry-cat { flex: none; margin: 0; color: #9bc6ff; text-align: center; }
-.entry-cat pre { margin: 0; font: 700 14px/1.3 ui-monospace, 'Cascadia Code', Consolas, monospace; }
+.entry-cat-button { display: block; margin: 0 auto; padding: 3px; border: 0; background: transparent; color: inherit; }
+.entry-cat-art { display: block; font: 700 14px/1.3 ui-monospace, 'Cascadia Code', Consolas, monospace; white-space: pre; }
+.entry-cat-art span { display: block; }
+.entry-cat-ears { transition: transform 180ms ease; transform-origin: center bottom; }
+.entry-cat-button:hover .entry-cat-ears, .entry-cat-button:focus-visible .entry-cat-ears { transform: rotate(-7deg) translateY(-1px); }
+@media (prefers-reduced-motion: reduce) { .entry-cat-ears { transition: none; } .entry-cat-button:hover .entry-cat-ears, .entry-cat-button:focus-visible .entry-cat-ears { transform: none; } }
 .entry-cat figcaption { margin-top: 6px; color: #a8bdad; font-size: 11px; }
 .entry-description { margin: 12px 0 30px; color: #b4c7b9; font-family: 'Malgun Gothic', system-ui, sans-serif; font-size: 14px; }
 .entry-form { border: 1px solid #343a3e; background: #16191b; padding: 17px; }
@@ -49,13 +54,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .site-title { color: #dbe9de; font-weight: 750; font-size: 17px; }
 .site-title::before { content: '~/'; color: #7cce99; margin-right: 4px; }
 .site-title span { color: #80daa0; }
-.header-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .header-cat { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.header-cat pre { flex: none; margin: 0; color: #9bc6ff; font: 700 10px/1.15 ui-monospace, 'Cascadia Code', Consolas, monospace; }
+.header-cat pre { flex: none; margin: 0; color: #9bc6ff; font: 700 15px/1.3 ui-monospace, 'Cascadia Code', Consolas, monospace; }
 .header-cat-speech { max-width: 180px; padding: 4px 8px; border: 1px solid #3a4d42; color: #c1d6c7; background: #172019; font: 12px/1.45 'Malgun Gothic', system-ui, sans-serif; overflow-wrap: anywhere; }
 .github-link { border: 1px solid #3c5054; color: #93d9e3; padding: 6px 12px; font-size: 13px; }
 .github-link:hover { color: #b8ffd0; border-color: #71c18b; background: #1d2d22; }
-.intro { padding: 44px 0 34px; border-bottom: 1px solid #26392d; }
+.intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 44px 0 34px; border-bottom: 1px solid #26392d; }
+.intro-text { min-width: 0; }
 .intro-kicker { margin: 0 0 15px; color: #82988a; font-size: 13px; overflow-wrap: anywhere; }
 .prompt-user, .terminal-prompt b { color: #8de4a8; font-weight: 700; }
 .prompt-separator { color: #d8e4da; }
@@ -200,10 +205,8 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   dialog { padding: 46px 24px 30px; }
 }
 @media (max-width: 470px) {
-  .header-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 10px 0; }
-  .header-right { display: contents; }
-  .header-cat { grid-column: 1 / -1; grid-row: 2; justify-self: end; }
-  .github-link { grid-column: 2; grid-row: 1; }
+  .intro { flex-direction: column; align-items: stretch; gap: 4px; }
+  .header-cat { align-self: flex-end; }
   .directory-group { grid-template-columns: minmax(0, 1fr); }
   .directory-item { min-height: 48px; padding: 10px 6px; }
   .project-grid { grid-template-columns: 1fr; }

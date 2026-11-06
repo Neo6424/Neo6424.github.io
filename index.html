@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Neo6424의 보안, 개발, 디지털 증거 프로젝트와 기록">
   <title>Neo6424의 블로그</title>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=15">
   <script src="posts.js?v=4" defer></script>
-  <script src="app.js?v=14" defer></script>
+  <script src="app.js?v=15" defer></script>
 </head>
 <body>
   <div class="terminal-window">
@@ -20,10 +20,10 @@
           <h1 id="entry-title">Neo6424의 블로그</h1>
         </div>
         <figure class="entry-cat">
-          <pre aria-hidden="true"> /\_/\
-( o.o )
- &gt; ^ &lt;</pre>
-          <figcaption>user: cat</figcaption>
+          <button type="button" id="entry-cat-button" class="entry-cat-button" aria-label="고양이 만져보기">
+            <span class="entry-cat-art" aria-hidden="true"><span class="entry-cat-ears"> /\_/\</span><span>( o.o )</span><span> &gt; ^ &lt;</span></span>
+          </button>
+          <figcaption id="entry-cat-message" aria-live="polite">...</figcaption>
         </figure>
       </div>
       <form id="entry-form" class="entry-form" autocomplete="off">
@@ -39,22 +39,22 @@
   <header class="site-header">
     <div class="container header-inner">
       <a class="site-title" href="./">Neo6424<span>.</span></a>
-      <div class="header-right">
-        <aside class="header-cat" aria-label="블로그 고양이">
-          <span id="header-cat-speech" class="header-cat-speech">반가워요, 냥!</span>
-          <pre aria-hidden="true"> /\_/\
-( o.o )
- &gt; ^ &lt;</pre>
-        </aside>
-        <a class="github-link" href="https://github.com/Neo6424">GitHub <span aria-hidden="true">↗</span></a>
-      </div>
+      <a class="github-link" href="https://github.com/Neo6424">GitHub <span aria-hidden="true">↗</span></a>
     </div>
   </header>
   <main class="container" id="content">
     <section class="intro" aria-labelledby="intro-title">
-      <p class="intro-kicker"><span class="prompt-user">neo6424@blog</span><span class="prompt-separator">:</span><span class="prompt-path">~</span><span class="prompt-sign">$</span> <span class="prompt-label">접속 완료</span></p>
-      <h1 id="intro-title">Neo6424의 블로그</h1>
-      <p class="intro-description">학습 기록</p>
+      <div class="intro-text">
+        <p class="intro-kicker"><span class="prompt-user">neo6424@blog</span><span class="prompt-separator">:</span><span class="prompt-path">~</span><span class="prompt-sign">$</span> <span class="prompt-label">접속 완료</span></p>
+        <h1 id="intro-title">Neo6424의 블로그</h1>
+        <p class="intro-description">학습 기록</p>
+      </div>
+      <aside class="header-cat" aria-label="블로그 고양이">
+        <span id="header-cat-speech" class="header-cat-speech">반가워요, 냥!</span>
+        <pre aria-hidden="true"> /\_/\
+( o.o )
+ &gt; ^ &lt;</pre>
+      </aside>
     </section>
     <section class="console" aria-labelledby="console-title">
       <div class="console-heading"><h2 id="console-title">터미널</h2><span id="current-path-heading">~</span></div>
