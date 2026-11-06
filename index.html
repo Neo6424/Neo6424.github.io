@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Neo6424의 개발과 보안 기록">
+  <meta name="description" content="Neo6424의 보안, 개발, 디지털 증거 프로젝트와 기록">
   <title>Neo6424의 블로그</title>
-  <link rel="stylesheet" href="style.css?v=5">
-  <script src="posts.js?v=3" defer></script>
+  <link rel="stylesheet" href="style.css?v=6">
+  <script src="posts.js?v=4" defer></script>
   <script src="app.js?v=3" defer></script>
 </head>
 <body>
@@ -18,20 +18,40 @@
     </div>
   </header>
   <main class="container" id="content">
-    <div class="intro">
-      <h1>Neo6424의 블로그</h1>
-    </div>
+    <section class="intro" aria-labelledby="intro-title">
+      <p class="intro-kicker">NEO6424 <span aria-hidden="true">/</span> SECURITY &amp; DEVELOPMENT</p>
+      <h1 id="intro-title">Neo6424의 블로그</h1>
+      <p class="intro-description">보안 코딩부터 디지털 증거 무결성까지.<br>프로젝트와 학습을 기록하는 공간입니다.</p>
+      <div class="intro-tags" aria-label="관심 주제"><span>웹 보안</span><span>디지털 증거</span><span>개발</span></div>
+    </section>
     <div class="layout">
       <aside class="sidebar" aria-label="카테고리">
         <h2>카테고리</h2>
         <div id="filters" class="filters" role="group" aria-label="카테고리 필터"></div>
       </aside>
       <section class="archive" aria-labelledby="archive-title">
+        <section class="projects" aria-labelledby="projects-title">
+          <div class="projects-heading"><div><p class="section-label">SELECTED WORK</p><h2 id="projects-title">GitHub 프로젝트</h2></div><a href="https://github.com/Neo6424?tab=repositories">전체 보기 <span aria-hidden="true">↗</span></a></div>
+          <div class="project-grid">
+            <a class="project-card" href="https://github.com/Neo6424/Secure_coding_HW">
+              <span class="project-type">WEB SECURITY <span aria-hidden="true">↗</span></span>
+              <h3>Secure Coding</h3>
+              <p>CSRF·XSS 등의 보안을 고려한 Django 기반 교육용 중고거래 서비스</p>
+              <span class="project-tech">Python · Django</span>
+            </a>
+            <a class="project-card" href="https://github.com/Neo6424/evidencebridge">
+              <span class="project-type">DIGITAL EVIDENCE <span aria-hidden="true">↗</span></span>
+              <h3>EvidenceBridge</h3>
+              <p>합성 로그와 SHA-256 해시를 활용한 디지털 증거 무결성 검증 데모</p>
+              <span class="project-tech">Python · Solidity · 로컬 EVM</span>
+            </a>
+          </div>
+        </section>
         <div class="write-area">
           <label for="write-category">새 글 카테고리</label>
           <select id="write-category"></select>
           <a id="write-link" class="write-link" href="https://github.com/Neo6424/Neo6424.github.io/issues/new">글쓰기</a>
-          <p>GitHub 로그인 후 글을 작성하세요. 제목 앞의 카테고리는 그대로 두세요. 게시된 글은 공개됩니다.</p>
+          <details class="write-help"><summary>글쓰기 안내</summary><p>GitHub 로그인 후 제목 앞의 카테고리를 유지하고 작성해 주세요. 글은 공개됩니다.</p></details>
         </div>
         <div class="archive-header">
           <div><h2 id="archive-title">전체 글</h2><p id="result-count" aria-live="polite"></p></div>
