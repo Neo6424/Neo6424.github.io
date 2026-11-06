@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Neo6424의 보안, 개발, 디지털 증거 프로젝트와 기록">
   <title>Neo6424의 블로그</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
   <script src="posts.js?v=4" defer></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <div class="terminal-window">
@@ -19,10 +19,9 @@
       <p class="entry-description">명령어를 확인하고 Enter를 눌러 접속하세요.</p>
       <form id="entry-form" class="entry-form" autocomplete="off">
         <label for="entry-input">접속 명령어</label>
-        <div class="entry-input-row"><span aria-hidden="true">$</span><input id="entry-input" name="command" type="text" autofocus value="ssh neo6424@blog" spellcheck="false" aria-describedby="entry-error entry-note"><button type="submit">접속</button></div>
+        <div class="entry-input-row"><span aria-hidden="true">$</span><input id="entry-input" name="command" type="text" autofocus value="ssh neo6424@blog" spellcheck="false" aria-describedby="entry-error"><button type="submit">접속</button></div>
       </form>
       <p id="entry-error" class="entry-error" role="status" aria-live="polite"></p>
-      <p id="entry-note" class="entry-note">실제 서버 연결이 아닌 블로그 내부 연출입니다.</p>
     </div>
   </section>
   <div id="blog-shell" hidden>
@@ -41,23 +40,23 @@
       <div class="intro-tags" aria-label="관심 주제"><span>웹 보안</span><span>디지털 증거</span><span>개발</span></div>
     </section>
     <section class="console" aria-labelledby="console-title">
-      <div class="console-heading"><h2 id="console-title">터미널</h2><span>virtual shell</span></div>
+      <div class="console-heading"><h2 id="console-title">터미널</h2><span>~/</span></div>
       <div id="terminal-output" class="terminal-output" role="log" aria-live="polite" aria-relevant="additions text" tabindex="0" aria-label="명령 실행 결과"></div>
       <form id="terminal-form" class="terminal-form" autocomplete="off">
         <label for="terminal-input" class="sr-only">터미널 명령어</label>
         <span class="terminal-prompt" aria-hidden="true"><b>neo6424@blog</b>:<em>~</em>$</span>
-        <input id="terminal-input" type="text" placeholder="help 입력 후 Enter" spellcheck="false" aria-describedby="terminal-hint">
+        <input id="terminal-input" type="text" placeholder="ls 입력 후 Enter" spellcheck="false" aria-describedby="terminal-hint">
         <button type="submit">실행</button>
       </form>
-      <p class="terminal-hint" id="terminal-hint">블로그에서만 작동하는 가상 터미널입니다. 명령어 목록은 help를 입력하세요.</p>
+      <p class="terminal-hint" id="terminal-hint"><code>ls</code>로 둘러보기 · <code>help</code>로 명령어 보기</p>
     </section>
-    <div class="layout">
-      <aside class="sidebar" aria-label="카테고리">
+    <div class="layout" id="content-panel" hidden>
+      <aside class="sidebar" id="category-panel" aria-label="카테고리" hidden>
         <h2>카테고리</h2>
         <div id="filters" class="filters" role="group" aria-label="카테고리 필터"></div>
       </aside>
-      <section class="archive" aria-labelledby="archive-title">
-        <section class="projects" aria-labelledby="projects-title">
+      <section class="archive" aria-label="콘텐츠">
+        <section class="projects" id="projects-panel" aria-labelledby="projects-title" hidden>
           <div class="projects-heading"><div><p class="section-label">SELECTED WORK</p><h2 id="projects-title">GitHub 프로젝트</h2></div><a href="https://github.com/Neo6424?tab=repositories">전체 보기 <span aria-hidden="true">↗</span></a></div>
           <div class="project-grid">
             <a class="project-card" href="https://github.com/Neo6424/Secure_coding_HW">
@@ -74,6 +73,7 @@
             </a>
           </div>
         </section>
+        <div id="posts-panel" hidden>
         <div class="write-area">
           <label for="write-category">새 글 카테고리</label>
           <select id="write-category"></select>
@@ -87,6 +87,7 @@
         <div id="post-list" class="post-list"></div>
         <p id="load-status" role="status" aria-live="polite"></p>
         <p id="empty" class="empty" hidden>해당하는 글이 없습니다.</p>
+        </div>
       </section>
     </div>
   </main>
