@@ -358,7 +358,7 @@ function runTerminalCommand(value) {
 $('#entry-form').addEventListener('submit', event => {
   event.preventDefault();
   const entryCommand = entryInput.value.trim();
-  if (entryCommand === 'ssh guest@blog') { window.location.assign('./secret.html'); return; }
+  if (entryCommand === 'ssh cat@blog') { window.location.assign('./secret.html'); return; }
   if (entryCommand !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
   entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
 });
