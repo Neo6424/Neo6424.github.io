@@ -141,11 +141,11 @@ async function loadIssues() {
     issueLoadState = 'ready';
     status.textContent = '';
     renderPosts();
-    if (currentPostView) renderPostView(currentPostView);
+    if (currentPostView) updatePostViewResults(currentPostView);
   } catch (error) {
     issueLoadState = 'error';
     status.textContent = 'GitHub 글을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.';
-    if (currentPostView) renderPostView(currentPostView);
+    if (currentPostView) updatePostViewResults(currentPostView);
   }
 }
 
@@ -181,12 +181,33 @@ function printTerminal(text, className = 'terminal-line') {
   terminalOutput.append(line);
 }
 
+function resetOutput(command = '') {
+  terminalOutput.replaceChildren();
+  terminalOutput.scrollTop = 0;
+  currentPostView = null;
+  if (command) printTerminal(`neo6424@blog:~$ ${command}`, 'terminal-command-line');
+}
+
+function returnToDirectory() {
+  resetOutput('ls');
+  const directory = showDirectoryCards();
+  directory.focus({preventScroll: true});
+  terminalOutput.scrollTop = 0;
+}
+
+function backButton() {
+  const button = element('button', 'terminal-back', '← 목록으로');
+  button.type = 'button';
+  button.addEventListener('click', returnToDirectory);
+  return button;
+}
+
 // Interactive views stay in the terminal. The shell never executes system commands.
 function createView(title, focusContent) {
   const view = element('section', 'terminal-view');
   const heading = element('h3', 'terminal-view-heading', title);
   heading.tabIndex = -1;
-  view.append(heading);
+  view.append(backButton(), heading);
   terminalOutput.append(view);
   if (focusContent) heading.focus();
   return view;
@@ -213,7 +234,7 @@ function renderPostView(view) {
   view.replaceChildren();
   const heading = element('h3', 'terminal-view-heading', active === '전체' ? '전체 글' : active);
   heading.tabIndex = -1;
-  view.append(heading);
+  view.append(backButton(), heading);
   const actions = element('div', 'terminal-actions');
   const label = element('label', '', '새 글 카테고리');
   const categorySelect = element('select', 'terminal-action');
@@ -230,18 +251,27 @@ function renderPostView(view) {
   categorySelect.addEventListener('change', setWriteLink); setWriteLink();
   label.append(categorySelect); actions.append(label, write); view.append(actions);
   view.append(element('p', 'terminal-view-note', 'GitHub에서 작성하며 공개됩니다. 제목 앞의 카테고리는 유지해 주세요.'));
+  const results = element('div', 'terminal-post-results');
+  view.append(results);
+  updatePostViewResults(view);
+  return heading;
+}
+
+function updatePostViewResults(view) {
+  const results = view.querySelector('.terminal-post-results');
+  if (!results) return;
+  results.replaceChildren();
   if (issueLoadState === 'loading') {
-    view.append(element('p', 'terminal-view-note', '글을 불러오는 중입니다.'));
+    results.append(element('p', 'terminal-view-note', '글을 불러오는 중입니다.'));
   } else if (issueLoadState === 'error') {
-    view.append(element('p', 'terminal-view-note', 'GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
+    results.append(element('p', 'terminal-view-note', 'GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
   } else if (!visiblePosts.length) {
-    view.append(element('p', 'terminal-view-note', '해당하는 글이 없습니다.'));
+    results.append(element('p', 'terminal-view-note', '해당하는 글이 없습니다.'));
   } else {
     const grid = element('div', 'terminal-card-grid');
     visiblePosts.forEach((post, i) => appendCard(grid, `${i + 1}. ${post.title}`, post.category, 'posts', button => openPost(post, button)));
-    view.append(grid);
+    results.append(grid);
   }
-  return heading;
 }
 
 function showView(view, category = '전체', focusContent = false, query = '') {
@@ -279,21 +309,43 @@ function appendCard(grid, name, description, kind, onSelect) {
 }
 
 function showDirectoryCards() {
-  const grid = element('div', 'terminal-card-grid');
-  appendCard(grid, 'projects/', '프로젝트 · cd projects', 'project', () => showView('projects', '전체', true));
-  appendCard(grid, 'posts/', '전체 글 · cd posts', 'posts', () => showView('posts', '전체', true));
-  const entries = [
-    ['dev/', '개발', '개발'],
-    ['ctf/', 'CTF/Wargame', 'CTF/Wargame'],
-    ['bounty/', 'Bug Bounty', 'Bug Bounty'],
-    ['blog/', '블로그/기술문서', '블로그/기술문서'],
-    ['paper/', '논문/컨퍼런스', '논문/컨퍼런스'],
-    ['contest/', '공모전/자격증', '공모전/자격증']
-  ];
-  for (const [name, description, category] of entries) {
-    appendCard(grid, name, description, 'directory', () => showView('posts', category, true));
+  const directory = element('div', 'directory-list');
+  directory.setAttribute('tabindex', '-1');
+  directory.setAttribute('aria-label', '블로그 탐색 목록');
+  function openDirectory(view, category, alias) {
+    resetOutput(`cd ${alias}`);
+    showView(view, category, true);
+    terminalOutput.scrollTop = 0;
   }
-  terminalOutput.append(grid);
+  function group(title, entries) {
+    const section = element('section', 'directory-group');
+    section.append(element('h3', 'directory-heading', title));
+    for (const [label, alias, onSelect] of entries) {
+      const button = element('button', 'directory-item');
+      button.type = 'button';
+      const arrow = element('span', 'directory-chevron', '→');
+      arrow.setAttribute('aria-hidden', 'true');
+      button.append(element('span', 'directory-name', label), element('span', 'directory-alias', alias), arrow);
+      button.addEventListener('click', onSelect);
+      section.append(button);
+    }
+    directory.append(section);
+  }
+  group('바로가기', [
+    ['프로젝트', 'projects/', () => openDirectory('projects', '전체', 'projects/')],
+    ['전체 글', 'posts/', () => openDirectory('posts', '전체', 'posts/')]
+  ]);
+  const entries = [
+    ['개발', 'dev/'],
+    ['CTF/Wargame', 'ctf/'],
+    ['Bug Bounty', 'bounty/'],
+    ['블로그/기술문서', 'blog/'],
+    ['논문/컨퍼런스', 'paper/'],
+    ['공모전/자격증', 'contest/']
+  ];
+  group('카테고리', entries.map(([category, alias]) => [category, alias, () => openDirectory('posts', category, alias)]));
+  terminalOutput.append(directory);
+  return directory;
 }
 
 function showPostCards() {
@@ -321,11 +373,10 @@ function runTerminalCommand(value) {
   const verb = parts[1].toLowerCase();
   const argument = (parts[2] || '').trim();
   if (verb === 'clear' && !argument) {
-    terminalOutput.replaceChildren();
-    currentPostView = null;
+    resetOutput();
     return;
   }
-  printTerminal(`neo6424@blog:~$ ${command}`, 'terminal-command-line');
+  resetOutput(command);
   switch (verb) {
     case 'help':
       showHelp();
@@ -379,18 +430,9 @@ $('#terminal-form').addEventListener('submit', event => {
   event.preventDefault();
   const command = terminalInput.value;
   terminalInput.value = '';
-  const previousCount = terminalOutput.children.length;
   runTerminalCommand(command);
   if (!$('#post-dialog').open) terminalInput.focus({preventScroll: true});
-  const firstNew = terminalOutput.children[previousCount];
-  const lastNew = terminalOutput.lastElementChild;
-  if (firstNew && lastNew && typeof window !== 'undefined' && typeof firstNew.getBoundingClientRect === 'function') {
-    const firstBounds = firstNew.getBoundingClientRect();
-    const lastBounds = lastNew.getBoundingClientRect();
-    if (firstBounds.top < 0 || lastBounds.bottom > window.innerHeight - 16) {
-      firstNew.scrollIntoView({block: 'start'});
-    }
-  }
+  terminalOutput.scrollTop = 0;
 });
 for (const name of categories) {
   const option = element('option', '', name); option.value = name; $('#write-category').append(option);
