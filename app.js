@@ -357,7 +357,10 @@ function runTerminalCommand(value) {
   }
 }
 $('#entry-form').addEventListener('submit', event => {
-  event.preventDefault(); if (entryInput.value.trim() !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
+  event.preventDefault();
+  const entryCommand = entryInput.value.trim();
+  if (entryCommand === 'ssh guest@blog') { window.location.assign('./secret.html'); return; }
+  if (entryCommand !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
   entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
 });
 // Tab completion only inspects the blog's virtual tree; it never executes shell commands.
@@ -445,8 +448,30 @@ terminalInput.addEventListener('keydown', event => {
     lastCompletionSignature = signature;
   } else clearCompletionNotice();
 });
+// Keep the command history in this page session, as a shell would.
+const commandHistory = [];
+let historyIndex = 0;
+let historyDraft = '';
+terminalInput.addEventListener('keydown', event => {
+  if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || event.isComposing || event.keyCode === 229 ||
+      event.shiftKey || event.ctrlKey || event.altKey || event.metaKey || !commandHistory.length) return;
+  event.preventDefault();
+  if (event.key === 'ArrowUp') {
+    if (historyIndex === commandHistory.length) historyDraft = terminalInput.value;
+    historyIndex = Math.max(0, historyIndex - 1);
+  } else {
+    historyIndex = Math.min(commandHistory.length, historyIndex + 1);
+  }
+  terminalInput.value = historyIndex === commandHistory.length ? historyDraft : commandHistory[historyIndex];
+  clearCompletionNotice();
+  const end = terminalInput.value.length;
+  terminalInput.setSelectionRange(end, end);
+});
 $('#terminal-form').addEventListener('submit', event => {
-  event.preventDefault(); const command=terminalInput.value; terminalInput.value=''; runTerminalCommand(command);
+  event.preventDefault(); const command=terminalInput.value;
+  if (command.trim()) commandHistory.push(command);
+  historyIndex = commandHistory.length; historyDraft = '';
+  terminalInput.value=''; runTerminalCommand(command);
   if (!$('#post-dialog').open) terminalInput.focus({preventScroll:true}); terminalOutput.scrollTop=0;
 });
 for (const name of categories) { const option=element('option','',name); option.value=name; $('#write-category').append(option); }
