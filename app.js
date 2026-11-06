@@ -141,9 +141,11 @@ async function loadIssues() {
     issueLoadState = 'ready';
     status.textContent = '';
     renderPosts();
+    if (currentPostView) renderPostView(currentPostView);
   } catch (error) {
     issueLoadState = 'error';
     status.textContent = 'GitHub 글을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.';
+    if (currentPostView) renderPostView(currentPostView);
   }
 }
 
@@ -158,6 +160,7 @@ const contentPanel = $('#content-panel');
 const categoryPanel = $('#category-panel');
 const projectsPanel = $('#projects-panel');
 const postsPanel = $('#posts-panel');
+let currentPostView = null;
 
 $('#entry-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -176,27 +179,95 @@ function printTerminal(text, className = 'terminal-line') {
   const line = element('div', className, text);
   line.style.whiteSpace = 'pre-wrap';
   terminalOutput.append(line);
-  terminalOutput.scrollTop = terminalOutput.scrollHeight;
 }
 
-// A selected view opens below the console; the shell never executes system commands.
-function showView(view, category = '전체', focusContent = false) {
-  contentPanel.hidden = false;
-  const projects = view === 'projects';
-  contentPanel.setAttribute('data-panel', projects ? 'projects' : 'posts');
-  projectsPanel.hidden = !projects;
-  postsPanel.hidden = projects;
-  categoryPanel.hidden = projects;
-  if (!projects) {
-    search.value = '';
-    selectCategory(category, {focusFilter: false});
+// Interactive views stay in the terminal. The shell never executes system commands.
+function createView(title, focusContent) {
+  const view = element('section', 'terminal-view');
+  const heading = element('h3', 'terminal-view-heading', title);
+  heading.tabIndex = -1;
+  view.append(heading);
+  terminalOutput.append(view);
+  if (focusContent) heading.focus();
+  return view;
+}
+
+function showProjects(focusContent = false) {
+  currentPostView = null;
+  const view = createView('프로젝트', focusContent);
+  const grid = element('div', 'terminal-project-grid');
+  const projects = [
+    ['Secure Coding', 'CSRF·XSS 등을 고려한 Django 교육용 중고거래 서비스', 'https://github.com/Neo6424/Secure_coding_HW'],
+    ['EvidenceBridge', '합성 로그와 SHA-256 기반 디지털 증거 무결성 검증 데모', 'https://github.com/Neo6424/evidencebridge']
+  ];
+  for (const [name, description, url] of projects) {
+    const link = element('a', 'terminal-project');
+    link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.append(element('strong', '', name), element('span', '', description));
+    grid.append(link);
   }
-  contentPanel.scrollIntoView({behavior: 'smooth', block: 'start'});
-  if (focusContent) {
-    const heading = projects ? $('#projects-title') : $('#archive-title');
-    heading.setAttribute('tabindex', '-1');
-    heading.focus({preventScroll: true});
+  view.append(grid);
+}
+
+function renderPostView(view) {
+  view.replaceChildren();
+  const heading = element('h3', 'terminal-view-heading', active === '전체' ? '전체 글' : active);
+  heading.tabIndex = -1;
+  view.append(heading);
+  const actions = element('div', 'terminal-actions');
+  const label = element('label', '', '새 글 카테고리');
+  const categorySelect = element('select', 'terminal-action');
+  categorySelect.setAttribute('aria-label', '새 글 카테고리');
+  for (const name of categories) {
+    const option = element('option', '', name);
+    option.value = name;
+    categorySelect.append(option);
   }
+  categorySelect.value = categories.includes(active) ? active : categories[0];
+  const write = element('a', 'terminal-action', '글쓰기 ↗');
+  write.target = '_blank'; write.rel = 'noopener noreferrer';
+  const setWriteLink = () => { write.href = `https://github.com/${repository}/issues/new?title=${encodeURIComponent(`[${categorySelect.value}] `)}`; };
+  categorySelect.addEventListener('change', setWriteLink); setWriteLink();
+  label.append(categorySelect); actions.append(label, write); view.append(actions);
+  view.append(element('p', 'terminal-view-note', 'GitHub에서 작성하며 공개됩니다. 제목 앞의 카테고리는 유지해 주세요.'));
+  if (issueLoadState === 'loading') {
+    view.append(element('p', 'terminal-view-note', '글을 불러오는 중입니다.'));
+  } else if (issueLoadState === 'error') {
+    view.append(element('p', 'terminal-view-note', 'GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
+  } else if (!visiblePosts.length) {
+    view.append(element('p', 'terminal-view-note', '해당하는 글이 없습니다.'));
+  } else {
+    const grid = element('div', 'terminal-card-grid');
+    visiblePosts.forEach((post, i) => appendCard(grid, `${i + 1}. ${post.title}`, post.category, 'posts', button => openPost(post, button)));
+    view.append(grid);
+  }
+  return heading;
+}
+
+function showView(view, category = '전체', focusContent = false, query = '') {
+  contentPanel.hidden = true;
+  if (view === 'projects') { showProjects(focusContent); return; }
+  search.value = query;
+  selectCategory(category, {focusFilter: false});
+  currentPostView = element('section', 'terminal-view');
+  terminalOutput.append(currentPostView);
+  const heading = renderPostView(currentPostView);
+  if (focusContent) heading.focus();
+}
+
+function showHelp() {
+  const help = element('div', 'help-grid');
+  const items = [
+    ['help', '명령어 목록 보기'], ['ls', '카테고리와 프로젝트 둘러보기'],
+    ['cd <이름>', '카테고리나 프로젝트 열기'], ['search <검색어>', '글 검색 · 검색어 없이 입력하면 초기화'],
+    ['posts', '현재 글 목록 보기'], ['open <번호>', '목록에서 글 열기'], ['clear', '터미널 출력 지우기']
+  ];
+  for (const [command, description] of items) {
+    const row = element('div', 'help-row');
+    row.append(element('code', 'help-command', command), element('span', 'help-description', description));
+    help.append(row);
+  }
+  terminalOutput.append(help);
 }
 
 function appendCard(grid, name, description, kind, onSelect) {
@@ -223,7 +294,6 @@ function showDirectoryCards() {
     appendCard(grid, name, description, 'directory', () => showView('posts', category, true));
   }
   terminalOutput.append(grid);
-  terminalOutput.scrollTop = terminalOutput.scrollHeight;
 }
 
 function showPostCards() {
@@ -232,7 +302,6 @@ function showPostCards() {
     appendCard(grid, `${i + 1}. ${post.title}`, post.category, 'posts', button => openPost(post, button));
   });
   terminalOutput.append(grid);
-  terminalOutput.scrollTop = terminalOutput.scrollHeight;
 }
 
 const categoryAliases = {
@@ -253,12 +322,13 @@ function runTerminalCommand(value) {
   const argument = (parts[2] || '').trim();
   if (verb === 'clear' && !argument) {
     terminalOutput.replaceChildren();
+    currentPostView = null;
     return;
   }
   printTerminal(`neo6424@blog:~$ ${command}`, 'terminal-command-line');
   switch (verb) {
     case 'help':
-      printTerminal('help  명령어 보기\nls  둘러보기\ncd <이름>  카테고리나 프로젝트 열기\nsearch <검색어>  글 검색 (검색어 없이 입력하면 초기화)\nposts  현재 글 목록\nopen <번호>  목록의 글 열기\nclear  터미널 출력 지우기');
+      showHelp();
       break;
     case 'ls':
       showDirectoryCards();
@@ -282,15 +352,7 @@ function runTerminalCommand(value) {
       break;
     }
     case 'search':
-      contentPanel.hidden = false;
-      contentPanel.setAttribute('data-panel', 'posts');
-      categoryPanel.hidden = false;
-      projectsPanel.hidden = true;
-      postsPanel.hidden = false;
-      search.value = argument;
-      renderPosts();
-      contentPanel.scrollIntoView({behavior: 'smooth', block: 'start'});
-      printTerminal(argument ? `“${argument}” 검색 결과를 표시합니다.` : '검색어를 지웠습니다.');
+      showView('posts', active, false, argument);
       break;
     case 'posts':
       if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
@@ -317,8 +379,18 @@ $('#terminal-form').addEventListener('submit', event => {
   event.preventDefault();
   const command = terminalInput.value;
   terminalInput.value = '';
+  const previousCount = terminalOutput.children.length;
   runTerminalCommand(command);
   if (!$('#post-dialog').open) terminalInput.focus({preventScroll: true});
+  const firstNew = terminalOutput.children[previousCount];
+  const lastNew = terminalOutput.lastElementChild;
+  if (firstNew && lastNew && typeof window !== 'undefined' && typeof firstNew.getBoundingClientRect === 'function') {
+    const firstBounds = firstNew.getBoundingClientRect();
+    const lastBounds = lastNew.getBoundingClientRect();
+    if (firstBounds.top < 0 || lastBounds.bottom > window.innerHeight - 16) {
+      firstNew.scrollIntoView({block: 'start'});
+    }
+  }
 });
 for (const name of categories) {
   const option = element('option', '', name); option.value = name; $('#write-category').append(option);

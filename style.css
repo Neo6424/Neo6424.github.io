@@ -63,7 +63,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .console-heading h2 { margin: 0; color: #d8eddd; font-size: 14px; }
 .console-heading h2::before { content: '>_'; color: #8ee4a8; margin-right: 10px; }
 .console-heading span { color: #91aa98; font-size: 11px; }
-.terminal-output { min-height: 66px; max-height: 540px; padding: 14px 16px 0; overflow: auto; color: #d1d7d9; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+.terminal-output { min-height: 66px; padding: 18px 20px 0; color: #e1e7e9; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
+.terminal-command-line { margin: 8px 0 12px; color: #9de9b0; font-weight: 700; }
+.help-grid { display: grid; gap: 2px; margin: 8px 0 20px; padding: 6px 0; border-top: 1px solid #39434a; border-bottom: 1px solid #39434a; white-space: normal; }
+.help-row { display: grid; grid-template-columns: minmax(140px, 190px) minmax(0, 1fr); align-items: baseline; gap: 20px; padding: 10px 8px; border-bottom: 1px solid #242a2e; }
+.help-row:last-child { border-bottom: 0; }
+.help-command { color: #9bc6ff; font-weight: 700; overflow-wrap: anywhere; }
+.help-description { color: #e0e5e8; font-family: 'Malgun Gothic', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
 .terminal-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0 18px; white-space: normal; }
 .terminal-card { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 5px; min-width: 0; min-height: 78px; padding: 13px 16px; border: 1px solid #3a454d; background: #1a1e21; color: #e0e5e8; text-align: left; line-height: 1.45; transition: background-color .15s, border-color .15s; }
 .terminal-card:hover { border-color: #80b6ff; background: #222b32; }
@@ -71,7 +77,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .terminal-card--project { color: #8edce8; }
 .terminal-card--posts { color: #dce3e6; }
 .terminal-card-name { color: inherit; font-weight: 700; overflow-wrap: anywhere; }
-.terminal-card-desc { color: #a9b4ba; font: 12px/1.45 'Malgun Gothic', system-ui, sans-serif; }
+.terminal-card-desc { color: #c2cbd0; font: 13px/1.55 'Malgun Gothic', system-ui, sans-serif; }
+.terminal-view { margin: 12px 0 22px; padding: 18px; border: 1px solid #3a454d; background: #161a1c; white-space: normal; }
+.terminal-view-heading { margin: 0 0 14px; color: #e7edef; font-size: 16px; line-height: 1.45; }
+.terminal-view-note { margin: 10px 0; color: #c2cbd0; font: 13px/1.65 'Malgun Gothic', system-ui, sans-serif; }
+.terminal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 4px; }
+.terminal-actions label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #e0e5e8; font-family: 'Malgun Gothic', system-ui, sans-serif; font-size: 13px; }
+.terminal-action { min-height: 40px; padding: 8px 12px; border: 1px solid #50616c; background: #20282d; color: #e5f0f1; font-size: 13px; }
+a.terminal-action { display: inline-flex; align-items: center; border-color: #6cb783; background: #90dca6; color: #102015; font-weight: 700; }
+a.terminal-action:hover { background: #b1f1c2; }
+.terminal-project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.terminal-project { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border: 1px solid #3a454d; background: #1a1e21; }
+.terminal-project:hover { border-color: #80b6ff; background: #222b32; }
+.terminal-project strong { color: #8edce8; font-size: 15px; }
+.terminal-project span { color: #d0d9dc; font: 13px/1.65 'Malgun Gothic', system-ui, sans-serif; }
 .terminal-output p { margin: 0 0 5px; }
 .terminal-form { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
 .terminal-prompt { flex: none; white-space: nowrap; color: #d1dfd4; }
@@ -166,6 +185,9 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   .terminal-path { font-size: 11px; }
   .console-heading { padding: 9px 12px; }
   .terminal-output { padding: 12px 12px 0; }
+  .help-row { grid-template-columns: 1fr; gap: 3px; padding: 10px 4px; }
+  .terminal-view { padding: 14px; }
+  .terminal-project-grid { grid-template-columns: 1fr; }
   .terminal-form { padding: 10px 12px; }
   .terminal-hint { padding: 0 12px 12px; }
 }
