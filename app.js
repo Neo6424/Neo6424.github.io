@@ -135,7 +135,7 @@ async function loadIssues() {
       const match = /^\[([^\]]+)\]\s*(.+)$/.exec(issue.title);
       if (!match || !categories.includes(match[1])) return null;
       const body = issue.body || '';
-      return {source: 'issue', category: match[1], title: match[2], description: body.replace(/\s+/g, ' ').slice(0, 110), body, url: `https://github.com/${repository}/issues/${issue.number}`, date: issue.created_at};
+      return {source: 'issue', number: issue.number, category: match[1], title: match[2], description: body.replace(/\s+/g, ' ').slice(0, 110), body, url: `https://github.com/${repository}/issues/${issue.number}`, date: issue.created_at};
     }).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date));
     allPosts = [...fromIssues, ...posts.map(post => ({...post, source: 'local'}))];
     issueLoadState = 'ready';
@@ -149,298 +149,214 @@ async function loadIssues() {
   }
 }
 
-// 이 터미널은 블로그 탐색 전용입니다. 입력을 운영체제나 서버에 전달하지 않습니다.
+// 블로그 내부의 가상 경로입니다. 운영체제 명령은 실행하지 않습니다.
 const entryScreen = $('#entry-screen');
 const entryInput = $('#entry-input');
 const entryError = $('#entry-error');
 const blogShell = $('#blog-shell');
 const terminalInput = $('#terminal-input');
 const terminalOutput = $('#terminal-output');
-const contentPanel = $('#content-panel');
-const categoryPanel = $('#category-panel');
-const projectsPanel = $('#projects-panel');
-const postsPanel = $('#posts-panel');
 let currentPostView = null;
-
-$('#entry-form').addEventListener('submit', event => {
-  event.preventDefault();
-  if (entryInput.value.trim() !== 'ssh neo6424@blog') {
-    entryError.textContent = '안내된 명령어를 입력한 뒤 Enter를 눌러주세요.';
-    entryInput.focus();
-    return;
-  }
-  entryError.textContent = '';
-  entryScreen.hidden = true;
-  blogShell.hidden = false;
-  terminalInput.focus();
-});
-
-function printTerminal(text, className = 'terminal-line') {
-  const line = element('div', className, text);
-  line.style.whiteSpace = 'pre-wrap';
-  terminalOutput.append(line);
-}
-
-function resetOutput(command = '') {
-  terminalOutput.replaceChildren();
-  terminalOutput.scrollTop = 0;
-  currentPostView = null;
-  if (command) printTerminal(`neo6424@blog:~$ ${command}`, 'terminal-command-line');
-}
-
-function returnToDirectory() {
-  resetOutput('ls');
-  const directory = showDirectoryCards();
-  directory.focus({preventScroll: true});
-  terminalOutput.scrollTop = 0;
-}
-
-function backButton() {
-  const button = element('button', 'terminal-back', '← 목록으로');
-  button.type = 'button';
-  button.addEventListener('click', returnToDirectory);
-  return button;
-}
-
-// Interactive views stay in the terminal. The shell never executes system commands.
-function createView(title, focusContent) {
-  const view = element('section', 'terminal-view');
-  const heading = element('h3', 'terminal-view-heading', title);
-  heading.tabIndex = -1;
-  view.append(backButton(), heading);
-  terminalOutput.append(view);
-  if (focusContent) heading.focus();
-  return view;
-}
-
-function showProjects(focusContent = false) {
-  currentPostView = null;
-  const view = createView('프로젝트', focusContent);
-  const grid = element('div', 'terminal-project-grid');
-  const projects = [
-    ['Secure Coding', 'CSRF·XSS 등을 고려한 Django 교육용 중고거래 서비스', 'https://github.com/Neo6424/Secure_coding_HW'],
-    ['EvidenceBridge', '합성 로그와 SHA-256 기반 디지털 증거 무결성 검증 데모', 'https://github.com/Neo6424/evidencebridge']
-  ];
-  for (const [name, description, url] of projects) {
-    const link = element('a', 'terminal-project');
-    link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
-    link.append(element('strong', '', name), element('span', '', description));
-    grid.append(link);
-  }
-  view.append(grid);
-}
-
-function renderPostView(view) {
-  view.replaceChildren();
-  const heading = element('h3', 'terminal-view-heading', active === '전체' ? '전체 글' : active);
-  heading.tabIndex = -1;
-  view.append(backButton(), heading);
-  const actions = element('div', 'terminal-actions');
-  const label = element('label', '', '새 글 카테고리');
-  const categorySelect = element('select', 'terminal-action');
-  categorySelect.setAttribute('aria-label', '새 글 카테고리');
-  for (const name of categories) {
-    const option = element('option', '', name);
-    option.value = name;
-    categorySelect.append(option);
-  }
-  categorySelect.value = categories.includes(active) ? active : categories[0];
-  const write = element('a', 'terminal-action', '글쓰기 ↗');
-  write.target = '_blank'; write.rel = 'noopener noreferrer';
-  const setWriteLink = () => { write.href = `https://github.com/${repository}/issues/new?title=${encodeURIComponent(`[${categorySelect.value}] `)}`; };
-  categorySelect.addEventListener('change', setWriteLink); setWriteLink();
-  label.append(categorySelect); actions.append(label, write); view.append(actions);
-  view.append(element('p', 'terminal-view-note', 'GitHub에서 작성하며 공개됩니다. 제목 앞의 카테고리는 유지해 주세요.'));
-  const results = element('div', 'terminal-post-results');
-  view.append(results);
-  updatePostViewResults(view);
-  return heading;
-}
-
-function updatePostViewResults(view) {
-  const results = view.querySelector('.terminal-post-results');
-  if (!results) return;
-  results.replaceChildren();
-  if (issueLoadState === 'loading') {
-    results.append(element('p', 'terminal-view-note', '글을 불러오는 중입니다.'));
-  } else if (issueLoadState === 'error') {
-    results.append(element('p', 'terminal-view-note', 'GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
-  } else if (!visiblePosts.length) {
-    results.append(element('p', 'terminal-view-note', '해당하는 글이 없습니다.'));
-  } else {
-    const grid = element('div', 'terminal-card-grid');
-    visiblePosts.forEach((post, i) => appendCard(grid, `${i + 1}. ${post.title}`, post.category, 'posts', button => openPost(post, button)));
-    results.append(grid);
-  }
-}
-
-function showView(view, category = '전체', focusContent = false, query = '') {
-  contentPanel.hidden = true;
-  if (view === 'projects') { showProjects(focusContent); return; }
-  search.value = query;
-  selectCategory(category, {focusFilter: false});
-  currentPostView = element('section', 'terminal-view');
-  terminalOutput.append(currentPostView);
-  const heading = renderPostView(currentPostView);
-  if (focusContent) heading.focus();
-}
-
-function showHelp() {
-  const help = element('div', 'help-grid');
-  const items = [
-    ['help', '명령어 목록 보기'], ['ls', '카테고리와 프로젝트 둘러보기'],
-    ['cd <이름>', '카테고리나 프로젝트 열기'], ['search <검색어>', '글 검색 · 검색어 없이 입력하면 초기화'],
-    ['posts', '현재 글 목록 보기'], ['open <번호>', '목록에서 글 열기'], ['clear', '터미널 출력 지우기']
-  ];
-  for (const [command, description] of items) {
-    const row = element('div', 'help-row');
-    row.append(element('code', 'help-command', command), element('span', 'help-description', description));
-    help.append(row);
-  }
-  terminalOutput.append(help);
-}
-
-function appendCard(grid, name, description, kind, onSelect) {
-  const button = element('button', `terminal-card terminal-card--${kind}`);
-  button.type = 'button';
-  button.append(element('span', 'terminal-card-name', name), element('span', 'terminal-card-desc', description));
-  button.addEventListener('click', () => onSelect(button));
-  grid.append(button);
-}
-
-function showDirectoryCards() {
-  const directory = element('div', 'directory-list');
-  directory.setAttribute('tabindex', '-1');
-  directory.setAttribute('aria-label', '블로그 탐색 목록');
-  function openDirectory(view, category, alias) {
-    resetOutput(`cd ${alias}`);
-    showView(view, category, true);
-    terminalOutput.scrollTop = 0;
-  }
-  function group(title, entries) {
-    const section = element('section', 'directory-group');
-    section.append(element('h3', 'directory-heading', title));
-    for (const [label, alias, onSelect] of entries) {
-      const button = element('button', 'directory-item');
-      button.type = 'button';
-      const arrow = element('span', 'directory-chevron', '→');
-      arrow.setAttribute('aria-hidden', 'true');
-      button.append(element('span', 'directory-name', label), element('span', 'directory-alias', alias), arrow);
-      button.addEventListener('click', onSelect);
-      section.append(button);
-    }
-    directory.append(section);
-  }
-  group('바로가기', [
-    ['프로젝트', 'projects/', () => openDirectory('projects', '전체', 'projects/')],
-    ['전체 글', 'posts/', () => openDirectory('posts', '전체', 'posts/')]
-  ]);
-  const entries = [
-    ['개발', 'dev/'],
-    ['CTF/Wargame', 'ctf/'],
-    ['Bug Bounty', 'bounty/'],
-    ['블로그/기술문서', 'blog/'],
-    ['논문/컨퍼런스', 'paper/'],
-    ['공모전/자격증', 'contest/']
-  ];
-  group('카테고리', entries.map(([category, alias]) => [category, alias, () => openDirectory('posts', category, alias)]));
-  terminalOutput.append(directory);
-  return directory;
-}
-
-function showPostCards() {
-  const grid = element('div', 'terminal-card-grid');
-  visiblePosts.forEach((post, i) => {
-    appendCard(grid, `${i + 1}. ${post.title}`, post.category, 'posts', button => openPost(post, button));
-  });
-  terminalOutput.append(grid);
-}
-
-const categoryAliases = {
-  all: '전체', 전체: '전체', '..': '전체', '~': '전체',
-  dev: '개발', development: '개발', 개발: '개발',
-  ctf: 'CTF/Wargame', wargame: 'CTF/Wargame', 'ctf/wargame': 'CTF/Wargame',
-  bounty: 'Bug Bounty', 'bug bounty': 'Bug Bounty',
-  blog: '블로그/기술문서', docs: '블로그/기술문서', '블로그/기술문서': '블로그/기술문서',
-  paper: '논문/컨퍼런스', conference: '논문/컨퍼런스', '논문/컨퍼런스': '논문/컨퍼런스',
-  contest: '공모전/자격증', cert: '공모전/자격증', '공모전/자격증': '공모전/자격증'
+const HOME = '/home/neo6424';
+let cwd = HOME;
+let lastListedPosts = [];
+const categoryDirectories = [
+  ['dev', '개발'], ['ctf', 'CTF/Wargame'], ['bounty', 'Bug Bounty'],
+  ['blog', '블로그/기술문서'], ['paper', '논문/컨퍼런스'], ['contest', '공모전/자격증']
+];
+const projectDirectories = {
+  'secure-coding': {title:'Secure Coding', description:'CSRF·XSS 등을 고려한 Django 교육용 중고거래 서비스', url:'https://github.com/Neo6424/Secure_coding_HW'},
+  evidencebridge: {title:'EvidenceBridge', description:'합성 로그와 SHA-256 기반 디지털 증거 무결성 검증 데모', url:'https://github.com/Neo6424/evidencebridge'}
 };
-
-function runTerminalCommand(value) {
-  const command = value.trim();
-  if (!command) return;
-  const parts = /^(\S+)(?:\s+([\s\S]*))?$/.exec(command);
-  const verb = parts[1].toLowerCase();
-  const argument = (parts[2] || '').trim();
-  if (verb === 'clear' && !argument) {
-    resetOutput();
-    return;
+function promptPath(path = cwd) { return path === HOME ? '~' : path.startsWith(HOME + '/') ? '~' + path.slice(HOME.length) : path; }
+function updatePrompt() {
+  const label = promptPath();
+  const path = $('#current-path'); if (path) path.textContent = label;
+  const header = $('#current-path-heading'); if (header) header.textContent = label;
+  const location = $('#terminal-location'); if (location) location.textContent = `현재 위치: ${cwd}`;
+}
+function directoryChildren(path) {
+  if (path === '/') return [{name:'home', label:'home'}];
+  if (path === '/home') return [{name:'neo6424', label:'neo6424'}];
+  if (path === HOME) return [{name:'projects', label:'프로젝트'}, {name:'posts', label:'글'}];
+  if (path === HOME + '/projects') return Object.entries(projectDirectories).map(([name, project]) => ({name, label:project.title}));
+  if (path === HOME + '/posts') return categoryDirectories.map(([name, label]) => ({name, label}));
+  return [];
+}
+function directoryExists(path) {
+  return path === '/' || path === '/home' || path === HOME || path === HOME + '/projects' || path === HOME + '/posts' ||
+    categoryDirectories.some(([name]) => path === `${HOME}/posts/${name}`) ||
+    Object.keys(projectDirectories).some(name => path === `${HOME}/projects/${name}`);
+}
+function resolveDirectory(input) {
+  const raw = (input || '~').trim();
+  if (raw.includes('~') && raw !== '~' && !raw.startsWith('~/')) return null;
+  let parts = raw.startsWith('/') ? [] : raw === '~' || raw.startsWith('~/') ? HOME.slice(1).split('/') : cwd.slice(1).split('/').filter(Boolean);
+  const rest = raw === '~' ? '' : raw.startsWith('~/') ? raw.slice(2) : raw;
+  for (const part of rest.split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') { parts.pop(); continue; }
+    const candidate = '/' + [...parts, part].join('/');
+    if (!directoryExists(candidate)) return null;
+    parts.push(part);
   }
-  resetOutput(command);
+  const result = '/' + parts.join('/');
+  return directoryExists(result) ? result : null;
+}
+function categoryForPath(path) {
+  const match = categoryDirectories.find(([name]) => path === `${HOME}/posts/${name}`);
+  return match ? match[1] : null;
+}
+function projectForPath(path) {
+  return Object.entries(projectDirectories).find(([name]) => path === `${HOME}/projects/${name}`)?.[1] || null;
+}
+function fileName(post, index) { return post.number ? `${post.number}.md` : `local-${index + 1}.md`; }
+function printTerminal(text, className = 'terminal-line') {
+  const line = element('div', className, text); line.style.whiteSpace = 'pre-wrap'; terminalOutput.append(line);
+}
+function resetOutput(command = '', path = cwd) {
+  terminalOutput.replaceChildren(); terminalOutput.scrollTop = 0; currentPostView = null;
+  if (command) printTerminal(`neo6424@blog:${promptPath(path)}$ ${command}`, 'terminal-command-line');
+}
+function addBack(view) {
+  const button = element('button', 'terminal-back', '← 목록으로'); button.type = 'button';
+  button.addEventListener('click', () => { resetOutput('ls'); showDirectory(cwd, true); }); view.append(button);
+}
+function makeView(title, focusContent = false) {
+  const view = element('section', 'terminal-view'); addBack(view);
+  const heading = element('h3', 'terminal-view-heading', title); heading.tabIndex = -1; view.append(heading); terminalOutput.append(view);
+  if (focusContent) heading.focus({preventScroll:true}); return view;
+}
+function addDirectoryItem(group, label, alias, onSelect) {
+  const button = element('button', 'directory-item'); button.type = 'button';
+  const arrow = element('span', 'directory-chevron', '→'); arrow.setAttribute('aria-hidden', 'true');
+  button.append(element('span', 'directory-name', label), element('span', 'directory-alias', alias), arrow);
+  button.addEventListener('click', () => onSelect(button)); group.append(button);
+}
+function navigate(path, focusContent = false) {
+  const previous = cwd;
+  cwd = path; updatePrompt(); search.value = '';
+  const category = categoryForPath(cwd); selectCategory(category || '전체', {focusFilter:false});
+  resetOutput(`cd ${path}`, previous); showDirectory(cwd, focusContent);
+}
+function directoryList(path, focusContent = false) {
+  const box = element('div', 'directory-list'); box.setAttribute('tabindex', '-1'); box.setAttribute('aria-label', `${path} 디렉터리`);
+  const group = element('section', 'directory-group'); group.append(element('h3', 'directory-heading', path));
+  for (const child of directoryChildren(path)) {
+    const target = (path === '/' ? '' : path) + '/' + child.name;
+    addDirectoryItem(group, child.label, `${child.name}/`, () => navigate(target, true));
+  }
+  box.append(group); terminalOutput.append(box); if (focusContent) box.focus({preventScroll:true});
+}
+function renderPostView(view, category = active) {
+  view.replaceChildren(); addBack(view);
+  const heading = element('h3', 'terminal-view-heading', category === '전체' ? '전체 글' : category); heading.tabIndex = -1; view.append(heading);
+  const actions = element('div', 'terminal-actions');
+  const label = element('label', '', '새 글 카테고리'); const categorySelect = element('select', 'terminal-action');
+  categorySelect.setAttribute('aria-label', '새 글 카테고리');
+  for (const name of categories) { const option = element('option', '', name); option.value = name; categorySelect.append(option); }
+  categorySelect.value = categories.includes(category) ? category : categories[0];
+  const write = element('a', 'terminal-action', '글쓰기 ↗'); write.target = '_blank'; write.rel = 'noopener noreferrer';
+  const setWriteLink = () => { write.href = `https://github.com/${repository}/issues/new?title=${encodeURIComponent(`[${categorySelect.value}] `)}`; };
+  categorySelect.addEventListener('change', setWriteLink); setWriteLink(); label.append(categorySelect); actions.append(label, write); view.append(actions);
+  view.append(element('p', 'terminal-view-note', 'GitHub에서 작성하며 공개됩니다. 제목 앞의 카테고리는 유지해 주세요.'));
+  const results = element('div', 'terminal-post-results'); view.append(results); updatePostViewResults(view); return heading;
+}
+function updatePostViewResults(view) {
+  const results = view.querySelector('.terminal-post-results'); if (!results) return; results.replaceChildren();
+  const selected = view._category || '전체';
+  const query = (view._query || '').trim().toLocaleLowerCase();
+  const matches = allPosts.filter(p => (selected === '전체' || p.category === selected) && [p.title, p.description, p.category, ...(p.paragraphs || []), p.body || ''].join(' ').toLocaleLowerCase().includes(query));
+  if (view._affectSelection) lastListedPosts = matches;
+  if (issueLoadState === 'loading') return results.append(element('p','terminal-view-note','글을 불러오는 중입니다.'));
+  if (issueLoadState === 'error') return results.append(element('p','terminal-view-note','GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
+  if (!matches.length) return results.append(element('p','terminal-view-note','해당하는 글이 없습니다.'));
+  const group = element('div','directory-list');
+  matches.forEach((post, i) => addDirectoryItem(group, post.title, fileName(post, i), button => openPost(post, button)));
+  results.append(group);
+}
+function showPostDirectory(path, focusContent = false, query = '', affectSelection = path === cwd) {
+  if (affectSelection) { search.value = query; selectCategory(categoryForPath(path) || '전체', {focusFilter:false}); }
+  currentPostView = element('section','terminal-view'); terminalOutput.append(currentPostView);
+  currentPostView._category = categoryForPath(path) || '전체';
+  currentPostView._query = query;
+  currentPostView._affectSelection = affectSelection;
+  const heading = renderPostView(currentPostView, categoryForPath(path) || '전체');
+  if (focusContent) heading.focus({preventScroll:true});
+}
+function showDirectory(path, focusContent = false) {
+  const project = projectForPath(path);
+  if (project) {
+    const view = makeView(project.title, focusContent);
+    view.append(element('p','terminal-view-note',project.description));
+    const link = element('a','terminal-action','GitHub에서 보기 ↗'); link.href = project.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; view.append(link);
+    const files = element('div','directory-list'); addDirectoryItem(files,'프로젝트 설명','README.md',() => showReadme(path, true)); view.append(files); return;
+  }
+  if (categoryForPath(path)) { showPostDirectory(path, focusContent); return; }
+  directoryList(path, focusContent);
+}
+function showReadme(path, focusContent = false) {
+  const project = projectForPath(path); if (!project) { printTerminal('파일을 찾을 수 없습니다.'); return; }
+  resetOutput('cat README.md'); const view = makeView('README.md', focusContent);
+  view.append(element('p','terminal-view-note',project.description));
+  const link = element('a','terminal-action','GitHub에서 보기 ↗'); link.href = project.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; view.append(link);
+}
+function showHelp() {
+  const help = element('div','help-grid');
+  const commands = [['pwd','현재 경로 보기'],['ls [경로]','디렉터리 보기'],['cd [경로]','디렉터리 이동'],['cd ..','상위 디렉터리 이동'],['tree','전체 구조 보기'],['cat <파일명>','파일 내용 보기'],['search <검색어>','글 검색'],['posts','현재 글 목록'],['open <번호>','목록의 글 열기'],['clear','출력 지우기'],['help','명령어 도움말']];
+  for (const [name, description] of commands) { const row=element('div','help-row'); row.append(element('code','help-command',name),element('span','help-description',description)); help.append(row); } terminalOutput.append(help);
+}
+function showPostCards() {
+  const grid = element('div','terminal-card-grid');
+  lastListedPosts = visiblePosts;
+  visiblePosts.forEach((post,i) => { const button=element('button','terminal-card terminal-card--posts'); button.type='button'; button.append(element('span','terminal-card-name',`${i + 1}. ${post.title}`),element('span','terminal-card-desc',`${post.category} · ${fileName(post,i)}`)); button.addEventListener('click',()=>openPost(post,button)); grid.append(button); }); terminalOutput.append(grid);
+}
+function showPostText(post, name) {
+  const view=makeView(name); view.append(element('p','terminal-view-note',post.title));
+  const text=element('div','dialog-text'); if (post.source === 'issue') renderMarkdown(text,post.body); else post.paragraphs.forEach(p=>text.append(element('p','',p))); view.append(text);
+  if (post.source === 'issue') { const link=element('a','terminal-action','GitHub에서 수정하기 ↗'); link.href=post.url; link.target='_blank'; link.rel='noopener noreferrer'; view.append(link); }
+}
+function runTerminalCommand(value) {
+  const command=value.trim(); if (!command) return;
+  const parts=/^(\S+)(?:\s+([\s\S]*))?$/.exec(command); const verb=parts[1].toLowerCase(); const arg=(parts[2] || '').trim();
+  const previous=cwd; if (verb === 'clear' && !arg) { resetOutput(); return; } resetOutput(command, previous);
   switch (verb) {
-    case 'help':
-      showHelp();
-      break;
-    case 'ls':
-      showDirectoryCards();
-      break;
-    case 'cd': {
-      const key = argument.toLocaleLowerCase().replace(/\/$/, '');
-      if (['projects', '프로젝트'].includes(key)) {
-        showView('projects');
-        printTerminal('프로젝트를 열었습니다.');
-        break;
-      }
-      if (['posts', '글'].includes(key)) {
-        showView('posts');
-        printTerminal('전체 글을 열었습니다.');
-        break;
-      }
-      const target = Object.hasOwn(categoryAliases, key) ? categoryAliases[key] : null;
-      if (!target) { printTerminal('카테고리를 찾을 수 없습니다. ls로 목록을 확인하세요.'); break; }
-      showView('posts', target);
-      printTerminal(`${target} 카테고리를 선택했습니다.`);
-      break;
+    case 'help': showHelp(); break;
+    case 'pwd': printTerminal(cwd); break;
+    case 'tree': printTerminal('/\n└── home/\n    └── neo6424/\n        ├── projects/\n        │   ├── secure-coding/\n        │   │   └── README.md\n        │   └── evidencebridge/\n        │       └── README.md\n        └── posts/\n            ├── dev/          개발\n            ├── ctf/          CTF/Wargame\n            ├── bounty/       Bug Bounty\n            ├── blog/         블로그/기술문서\n            ├── paper/        논문/컨퍼런스\n            └── contest/      공모전/자격증'); break;
+    case 'ls': { const target=resolveDirectory(arg || '.'); if (!target) { printTerminal(`ls: 디렉터리를 찾을 수 없습니다: ${arg}`); break; } showDirectory(target); break; }
+    case 'cd': { const target=resolveDirectory(arg || '~'); if (!target) { printTerminal(`cd: 디렉터리를 찾을 수 없습니다: ${arg}`); break; } cwd=target; updatePrompt(); search.value=''; selectCategory(categoryForPath(cwd) || '전체',{focusFilter:false}); showDirectory(cwd); break; }
+    case 'cat': {
+      if (arg === 'README.md' && projectForPath(cwd)) { const project=projectForPath(cwd); const view=makeView('README.md'); view.append(element('p','terminal-view-note',project.description)); const link=element('a','terminal-action','GitHub에서 보기 ↗'); link.href=project.url; link.target='_blank'; link.rel='noopener noreferrer'; view.append(link); break; }
+      if (categoryForPath(cwd)) { const current=allPosts.filter(post=>post.category===categoryForPath(cwd)); const post=current.find((item,i)=>fileName(item,i)===arg); if (post) { showPostText(post,arg); break; } }
+      printTerminal(`cat: 파일을 찾을 수 없습니다: ${arg}`); break;
     }
-    case 'search':
-      showView('posts', active, false, argument);
-      break;
+    case 'search': showPostDirectory(categoryForPath(cwd) ? cwd : HOME+'/posts',false,arg,true); break;
     case 'posts':
       if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
-      if (issueLoadState === 'error') printTerminal('GitHub 글을 불러오지 못했습니다. 화면을 새로고침해 주세요.');
-      if (!visiblePosts.length) { if (issueLoadState !== 'error') printTerminal('표시할 글이 없습니다.'); break; }
-      showPostCards();
-      break;
+      if (issueLoadState === 'error') { printTerminal('GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'); break; }
+      if (!visiblePosts.length) { printTerminal('표시할 글이 없습니다.'); break; } showPostCards(); break;
     case 'open': {
       if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
-      if (issueLoadState === 'error' && !visiblePosts.length) { printTerminal('GitHub 글을 불러오지 못했습니다. 화면을 새로고침해 주세요.'); break; }
-      if (!/^[1-9]\d*$/.test(argument) || Number(argument) > visiblePosts.length) {
-        printTerminal('글 번호를 확인하세요. posts로 목록을 볼 수 있습니다.');
-        break;
-      }
-      openPost(visiblePosts[Number(argument) - 1], terminalInput);
-      break;
+      if (issueLoadState === 'error') { printTerminal('GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'); break; }
+      if (!/^[1-9]\d*$/.test(arg) || Number(arg)>lastListedPosts.length) { printTerminal('글 번호를 확인하세요. posts로 목록을 볼 수 있습니다.'); break; }
+      openPost(lastListedPosts[Number(arg)-1],terminalInput); break;
     }
-    default:
-      printTerminal('알 수 없는 명령어입니다. help로 사용 가능한 명령어를 확인하세요.');
+    default: printTerminal('알 수 없는 명령어입니다. help로 사용 가능한 명령어를 확인하세요.');
   }
 }
-
-$('#terminal-form').addEventListener('submit', event => {
-  event.preventDefault();
-  const command = terminalInput.value;
-  terminalInput.value = '';
-  runTerminalCommand(command);
-  if (!$('#post-dialog').open) terminalInput.focus({preventScroll: true});
-  terminalOutput.scrollTop = 0;
+$('#entry-form').addEventListener('submit', event => {
+  event.preventDefault(); if (entryInput.value.trim() !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
+  entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
 });
-for (const name of categories) {
-  const option = element('option', '', name); option.value = name; $('#write-category').append(option);
-}
-$('#write-category').addEventListener('change', updateWriteLink);
-updateWriteLink();
-$('.dialog-close').addEventListener('click', () => $('#post-dialog').close());
-$('#post-dialog').addEventListener('click', event => { if (event.target === $('#post-dialog')) $('#post-dialog').close(); });
-$('#post-dialog').addEventListener('close', () => opener?.focus());
-search.addEventListener('input', renderPosts);
+$('#terminal-form').addEventListener('submit', event => {
+  event.preventDefault(); const command=terminalInput.value; terminalInput.value=''; runTerminalCommand(command);
+  if (!$('#post-dialog').open) terminalInput.focus({preventScroll:true}); terminalOutput.scrollTop=0;
+});
+for (const name of categories) { const option=element('option','',name); option.value=name; $('#write-category').append(option); }
+$('#write-category').addEventListener('change',updateWriteLink); updateWriteLink();
+$('.dialog-close').addEventListener('click',()=>$('#post-dialog').close());
+$('#post-dialog').addEventListener('click',event=>{if(event.target===$('#post-dialog'))$('#post-dialog').close();});
+$('#post-dialog').addEventListener('close',()=>opener?.focus());
+search.addEventListener('input',renderPosts);
 renderFilters(); renderPosts(); loadIssues();
