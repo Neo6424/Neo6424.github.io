@@ -355,6 +355,15 @@ function runTerminalCommand(value) {
     default: printTerminal('알 수 없는 명령어입니다. help로 사용 가능한 명령어를 확인하세요.');
   }
 }
+// The entry cat reveals a small hint when visited a few times.
+const entryCatButton = $('#entry-cat-button');
+const entryCatMessage = $('#entry-cat-message');
+let entryCatClicks = 0;
+entryCatButton?.addEventListener('click', () => {
+  entryCatClicks++;
+  const replies = ['야옹!', '골골...', 'user: cat', '야옹!'];
+  if (entryCatMessage) entryCatMessage.textContent = replies[(entryCatClicks - 1) % replies.length];
+});
 // The cat only starts chatting after the visitor enters the blog.
 let catChatStarted = false;
 function startHeaderCat() {
