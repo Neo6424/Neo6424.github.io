@@ -358,8 +358,15 @@ function runTerminalCommand(value) {
 $('#entry-form').addEventListener('submit', event => {
   event.preventDefault();
   const entryCommand = entryInput.value.trim();
+  if (entryCommand === 'help') {
+    entryError.className = 'entry-note';
+    entryError.textContent = '접속 형식: ssh user@blog';
+    entryInput.value = '';
+    entryInput.focus();
+    return;
+  }
   if (entryCommand === 'ssh cat@blog') { window.location.assign('./secret.html'); return; }
-  if (entryCommand !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
+  if (entryCommand !== 'ssh neo6424@blog') { entryError.className='entry-error'; entryError.textContent='알 수 없는 명령어입니다. help로 접속 형식을 확인하세요.'; entryInput.focus(); return; }
   entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
 });
 // Tab completion only inspects the blog's virtual tree; it never executes shell commands.
