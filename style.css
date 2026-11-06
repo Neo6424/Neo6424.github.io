@@ -49,6 +49,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .site-title { color: #dbe9de; font-weight: 750; font-size: 17px; }
 .site-title::before { content: '~/'; color: #7cce99; margin-right: 4px; }
 .site-title span { color: #80daa0; }
+.header-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.header-cat { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.header-cat pre { flex: none; margin: 0; color: #9bc6ff; font: 700 10px/1.15 ui-monospace, 'Cascadia Code', Consolas, monospace; }
+.header-cat-speech { max-width: 180px; padding: 4px 8px; border: 1px solid #3a4d42; color: #c1d6c7; background: #172019; font: 12px/1.45 'Malgun Gothic', system-ui, sans-serif; overflow-wrap: anywhere; }
 .github-link { border: 1px solid #3c5054; color: #93d9e3; padding: 6px 12px; font-size: 13px; }
 .github-link:hover { color: #b8ffd0; border-color: #71c18b; background: #1d2d22; }
 .intro { padding: 44px 0 34px; border-bottom: 1px solid #26392d; }
@@ -196,6 +200,10 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   dialog { padding: 46px 24px 30px; }
 }
 @media (max-width: 470px) {
+  .header-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 10px 0; }
+  .header-right { display: contents; }
+  .header-cat { grid-column: 1 / -1; grid-row: 2; justify-self: end; }
+  .github-link { grid-column: 2; grid-row: 1; }
   .directory-group { grid-template-columns: minmax(0, 1fr); }
   .directory-item { min-height: 48px; padding: 10px 6px; }
   .project-grid { grid-template-columns: 1fr; }
