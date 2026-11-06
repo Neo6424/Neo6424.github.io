@@ -218,12 +218,21 @@ function resetOutput(command = '', path = cwd) {
   terminalOutput.replaceChildren(); terminalOutput.scrollTop = 0; currentPostView = null;
   if (command) printTerminal(`neo6424@blog:${promptPath(path)}$ ${command}`, 'terminal-command-line');
 }
-function addBack(view) {
-  const button = element('button', 'terminal-back', '← 목록으로'); button.type = 'button';
-  button.addEventListener('click', () => { resetOutput('ls'); showDirectory(cwd, true); }); view.append(button);
+function parentDirectory(path) {
+  if (path === '/') return '/';
+  return path.slice(0, path.lastIndexOf('/')) || '/';
 }
-function makeView(title, focusContent = false) {
-  const view = element('section', 'terminal-view'); addBack(view);
+function addBack(view, targetPath = cwd, moveToTarget = false) {
+  const button = element('button', 'terminal-back', '← 목록으로'); button.type = 'button';
+  button.addEventListener('click', () => {
+    if (moveToTarget) { navigate(targetPath, true); return; }
+    resetOutput(targetPath === cwd ? 'ls' : `ls ${targetPath}`);
+    showDirectory(targetPath, true);
+  });
+  view.append(button);
+}
+function makeView(title, focusContent = false, backPath = cwd, moveBack = false) {
+  const view = element('section', 'terminal-view'); addBack(view, backPath, moveBack);
   const heading = element('h3', 'terminal-view-heading', title); heading.tabIndex = -1; view.append(heading); terminalOutput.append(view);
   if (focusContent) heading.focus({preventScroll:true}); return view;
 }
@@ -249,7 +258,7 @@ function directoryList(path, focusContent = false) {
   box.append(group); terminalOutput.append(box); if (focusContent) box.focus({preventScroll:true});
 }
 function renderPostView(view, category = active) {
-  view.replaceChildren(); addBack(view);
+  view.replaceChildren(); addBack(view, view._backPath, view._moveBack);
   const heading = element('h3', 'terminal-view-heading', category === '전체' ? '전체 글' : category); heading.tabIndex = -1; view.append(heading);
   const actions = element('div', 'terminal-actions');
   const label = element('label', '', '새 글 카테고리'); const categorySelect = element('select', 'terminal-action');
@@ -275,19 +284,21 @@ function updatePostViewResults(view) {
   matches.forEach((post, i) => addDirectoryItem(group, post.title, fileName(post, i), button => openPost(post, button)));
   results.append(group);
 }
-function showPostDirectory(path, focusContent = false, query = '', affectSelection = path === cwd) {
+function showPostDirectory(path, focusContent = false, query = '', affectSelection = path === cwd, backPath = parentDirectory(path), moveBack = path === cwd) {
   if (affectSelection) { search.value = query; selectCategory(categoryForPath(path) || '전체', {focusFilter:false}); }
   currentPostView = element('section','terminal-view'); terminalOutput.append(currentPostView);
   currentPostView._category = categoryForPath(path) || '전체';
   currentPostView._query = query;
   currentPostView._affectSelection = affectSelection;
+  currentPostView._backPath = backPath;
+  currentPostView._moveBack = moveBack;
   const heading = renderPostView(currentPostView, categoryForPath(path) || '전체');
   if (focusContent) heading.focus({preventScroll:true});
 }
 function showDirectory(path, focusContent = false) {
   const project = projectForPath(path);
   if (project) {
-    const view = makeView(project.title, focusContent);
+    const view = makeView(project.title, focusContent, parentDirectory(path), path === cwd);
     view.append(element('p','terminal-view-note',project.description));
     const link = element('a','terminal-action','GitHub에서 보기 ↗'); link.href = project.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; view.append(link);
     const files = element('div','directory-list'); addDirectoryItem(files,'프로젝트 설명','README.md',() => showReadme(path, true)); view.append(files); return;
@@ -297,7 +308,7 @@ function showDirectory(path, focusContent = false) {
 }
 function showReadme(path, focusContent = false) {
   const project = projectForPath(path); if (!project) { printTerminal('파일을 찾을 수 없습니다.'); return; }
-  resetOutput('cat README.md'); const view = makeView('README.md', focusContent);
+  resetOutput('cat README.md'); const view = makeView('README.md', focusContent, path);
   view.append(element('p','terminal-view-note',project.description));
   const link = element('a','terminal-action','GitHub에서 보기 ↗'); link.href = project.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; view.append(link);
 }
@@ -331,7 +342,7 @@ function runTerminalCommand(value) {
       if (categoryForPath(cwd)) { const current=allPosts.filter(post=>post.category===categoryForPath(cwd)); const post=current.find((item,i)=>fileName(item,i)===arg); if (post) { showPostText(post,arg); break; } }
       printTerminal(`cat: 파일을 찾을 수 없습니다: ${arg}`); break;
     }
-    case 'search': showPostDirectory(categoryForPath(cwd) ? cwd : HOME+'/posts',false,arg,true); break;
+    case 'search': showPostDirectory(categoryForPath(cwd) ? cwd : HOME+'/posts',false,arg,true,cwd,false); break;
     case 'posts':
       if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
       if (issueLoadState === 'error') { printTerminal('GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'); break; }
@@ -348,6 +359,91 @@ function runTerminalCommand(value) {
 $('#entry-form').addEventListener('submit', event => {
   event.preventDefault(); if (entryInput.value.trim() !== 'ssh neo6424@blog') { entryError.textContent='안내된 명령어를 입력한 뒤 Enter를 눌러주세요.'; entryInput.focus(); return; }
   entryError.textContent=''; entryScreen.hidden=true; blogShell.hidden=false; updatePrompt(); terminalInput.focus();
+});
+// Tab completion only inspects the blog's virtual tree; it never executes shell commands.
+const completionCommands = ['cat', 'cd', 'clear', 'help', 'ls', 'open', 'posts', 'pwd', 'search', 'tree'];
+let completionNotice = null;
+let lastCompletionSignature = '';
+function clearCompletionNotice() {
+  if (completionNotice) completionNotice.textContent = '';
+  lastCompletionSignature = '';
+}
+function showCompletionNotice(matches) {
+  if (!completionNotice) {
+    completionNotice = element('span', 'completion-suggestions');
+    completionNotice.setAttribute('role', 'status');
+    completionNotice.setAttribute('aria-live', 'polite');
+    completionNotice.style.display = 'block';
+    completionNotice.style.marginTop = '6px';
+    completionNotice.style.color = '#b8d4e8';
+    completionNotice.style.overflowWrap = 'anywhere';
+    $('#terminal-hint').append(completionNotice);
+  }
+  completionNotice.textContent = `자동 완성 후보: ${matches.join('  ')}`;
+}
+function commonCompletionPrefix(values) {
+  return values.reduce((prefix, value) => {
+    let i = 0;
+    while (i < prefix.length && i < value.length && prefix[i] === value[i]) i++;
+    return prefix.slice(0, i);
+  });
+}
+function getCompletionCandidates(value, cursor) {
+  const before = value.slice(0, cursor);
+  const tokenStart = before.search(/\S*$/);
+  const token = before.slice(tokenStart);
+  const initial = before.slice(0, tokenStart);
+  if (!initial.trim()) return { tokenStart, token, candidates: completionCommands, kind: 'command' };
+  const match = /^\s*(\S+)\s+$/.exec(initial);
+  if (!match) return null;
+  const command = match[1].toLowerCase();
+  if (command !== 'cd' && command !== 'ls' && command !== 'cat') return null;
+  if (command === 'cat') {
+    if (token.includes('/')) return null; // cat currently accepts files in the current directory.
+    let files = [];
+    if (projectForPath(cwd)) files = ['README.md'];
+    else if (categoryForPath(cwd)) files = allPosts.filter(post => post.category === categoryForPath(cwd)).map(fileName);
+    return { tokenStart, token, candidates: files, kind: 'file' };
+  }
+  if (token === '~' || token === '.' || token === '..') {
+    return { tokenStart, token, candidates: [token + '/'], kind: 'directory' };
+  }
+  const slash = token.lastIndexOf('/');
+  const base = slash < 0 ? '' : token.slice(0, slash + 1);
+  const prefix = slash < 0 ? token : token.slice(slash + 1);
+  const path = base ? resolveDirectory(base) : cwd;
+  if (!path) return null;
+  return { tokenStart, token, candidates: directoryChildren(path).map(child => base + child.name + '/'), kind: 'directory', prefix };
+}
+$('#terminal-form').addEventListener('submit', clearCompletionNotice);
+terminalInput.addEventListener('input', clearCompletionNotice);
+terminalInput.addEventListener('keydown', event => {
+  if (event.key !== 'Tab' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+  const value = terminalInput.value;
+  const start = terminalInput.selectionStart ?? value.length;
+  const end = terminalInput.selectionEnd ?? start;
+  if (!value.trim() || start !== end || (start < value.length && !/\s/.test(value[start]))) {
+    clearCompletionNotice(); return;
+  }
+  const result = getCompletionCandidates(value, start);
+  if (!result) { clearCompletionNotice(); return; }
+  const matches = result.candidates.filter(candidate => candidate.startsWith(result.token));
+  if (!matches.length) { clearCompletionNotice(); return; }
+  let replacement = matches.length === 1 ? matches[0] : commonCompletionPrefix(matches);
+  if (matches.length === 1 && result.kind !== 'directory' && start === value.length) replacement += ' ';
+  if (replacement !== result.token) {
+    event.preventDefault();
+    terminalInput.setRangeText(replacement, result.tokenStart, start, 'end');
+    clearCompletionNotice();
+    return;
+  }
+  if (matches.length > 1) {
+    const signature = `${value}\n${start}\n${matches.join('\n')}`;
+    if (lastCompletionSignature === signature) { clearCompletionNotice(); return; }
+    event.preventDefault();
+    showCompletionNotice(matches);
+    lastCompletionSignature = signature;
+  } else clearCompletionNotice();
 });
 $('#terminal-form').addEventListener('submit', event => {
   event.preventDefault(); const command=terminalInput.value; terminalInput.value=''; runTerminalCommand(command);
