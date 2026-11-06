@@ -33,10 +33,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .entry-cat { flex: none; margin: 0; color: #9bc6ff; text-align: center; }
 .entry-cat-button { display: block; margin: 0 auto; padding: 3px; border: 0; background: transparent; color: inherit; }
 .entry-cat-art { display: block; font: 700 14px/1.3 ui-monospace, 'Cascadia Code', Consolas, monospace; white-space: pre; }
-.entry-cat-art span { display: block; }
-.entry-cat-ears { transition: transform 180ms ease; transform-origin: center bottom; }
-.entry-cat-button:hover .entry-cat-ears, .entry-cat-button:focus-visible .entry-cat-ears { transform: rotate(-7deg) translateY(-1px); }
-@media (prefers-reduced-motion: reduce) { .entry-cat-ears { transition: none; } .entry-cat-button:hover .entry-cat-ears, .entry-cat-button:focus-visible .entry-cat-ears { transform: none; } }
+.entry-cat-line { display: block; }
+.entry-cat-ear { display: inline-block; }
+@keyframes cat-ear-left { 0%, 100% { transform: translate(0, 0); } 40% { transform: translate(-.5px, -1px); } }
+@keyframes cat-ear-right { 0%, 100% { transform: translate(0, 0); } 60% { transform: translate(.5px, -1px); } }
+@media (prefers-reduced-motion: no-preference) {
+  .entry-cat-button:hover .entry-cat-ear-left, .entry-cat-button:focus-visible .entry-cat-ear-left { animation: cat-ear-left 700ms ease-in-out 2; }
+  .entry-cat-button:hover .entry-cat-ear-right, .entry-cat-button:focus-visible .entry-cat-ear-right { animation: cat-ear-right 700ms ease-in-out 2; }
+}
 .entry-cat figcaption { margin-top: 6px; color: #a8bdad; font-size: 11px; }
 .entry-description { margin: 12px 0 30px; color: #b4c7b9; font-family: 'Malgun Gothic', system-ui, sans-serif; font-size: 14px; }
 .entry-form { border: 1px solid #343a3e; background: #16191b; padding: 17px; }
