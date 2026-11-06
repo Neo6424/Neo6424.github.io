@@ -5,11 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Neo6424의 보안, 개발, 디지털 증거 프로젝트와 기록">
   <title>Neo6424의 블로그</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <script src="posts.js?v=4" defer></script>
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </head>
 <body>
+  <div class="terminal-window">
+  <div class="terminal-bar" aria-hidden="true"><span class="terminal-dots"><i></i><i></i><i></i></span><span class="terminal-path">neo6424@blog: ~</span><span class="terminal-shell">bash</span></div>
+  <section id="entry-screen" class="entry-screen" aria-labelledby="entry-title">
+    <div class="entry-content">
+      <p class="entry-eyebrow">neo6424@blog:~</p>
+      <h1 id="entry-title">Neo6424의 블로그</h1>
+      <p class="entry-description">명령어를 확인하고 Enter를 눌러 접속하세요.</p>
+      <form id="entry-form" class="entry-form" autocomplete="off">
+        <label for="entry-input">접속 명령어</label>
+        <div class="entry-input-row"><span aria-hidden="true">$</span><input id="entry-input" name="command" type="text" autofocus value="ssh neo6424@blog" spellcheck="false" aria-describedby="entry-error entry-note"><button type="submit">접속</button></div>
+      </form>
+      <p id="entry-error" class="entry-error" role="status" aria-live="polite"></p>
+      <p id="entry-note" class="entry-note">실제 서버 연결이 아닌 블로그 내부 연출입니다.</p>
+    </div>
+  </section>
+  <div id="blog-shell" hidden>
   <a class="skip" href="#content">본문으로 건너뛰기</a>
   <header class="site-header">
     <div class="container header-inner">
@@ -19,10 +35,21 @@
   </header>
   <main class="container" id="content">
     <section class="intro" aria-labelledby="intro-title">
-      <p class="intro-kicker">NEO6424 <span aria-hidden="true">/</span> SECURITY &amp; DEVELOPMENT</p>
+      <p class="intro-kicker"><span class="prompt-user">neo6424@blog</span><span class="prompt-separator">:</span><span class="prompt-path">~</span><span class="prompt-sign">$</span> <span class="prompt-label">접속 완료</span></p>
       <h1 id="intro-title">Neo6424의 블로그</h1>
       <p class="intro-description">보안 코딩부터 디지털 증거 무결성까지.<br>프로젝트와 학습을 기록하는 공간입니다.</p>
       <div class="intro-tags" aria-label="관심 주제"><span>웹 보안</span><span>디지털 증거</span><span>개발</span></div>
+    </section>
+    <section class="console" aria-labelledby="console-title">
+      <div class="console-heading"><h2 id="console-title">터미널</h2><span>virtual shell</span></div>
+      <div id="terminal-output" class="terminal-output" role="log" aria-live="polite" aria-relevant="additions text" tabindex="0" aria-label="명령 실행 결과"></div>
+      <form id="terminal-form" class="terminal-form" autocomplete="off">
+        <label for="terminal-input" class="sr-only">터미널 명령어</label>
+        <span class="terminal-prompt" aria-hidden="true"><b>neo6424@blog</b>:<em>~</em>$</span>
+        <input id="terminal-input" type="text" placeholder="help 입력 후 Enter" spellcheck="false" aria-describedby="terminal-hint">
+        <button type="submit">실행</button>
+      </form>
+      <p class="terminal-hint" id="terminal-hint">블로그에서만 작동하는 가상 터미널입니다. 명령어 목록은 help를 입력하세요.</p>
     </section>
     <div class="layout">
       <aside class="sidebar" aria-label="카테고리">
@@ -64,6 +91,8 @@
     </div>
   </main>
   <footer class="container footer">© Neo6424</footer>
+  </div>
+  </div>
   <dialog id="post-dialog" aria-labelledby="dialog-title">
     <button class="dialog-close" type="button" aria-label="글 닫기">×</button>
     <div id="dialog-content"></div>
