@@ -62,7 +62,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .console-heading { display: flex; justify-content: space-between; gap: 15px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #343a3e; background: #1d2022; }
 .console-heading h2 { margin: 0; color: #d8eddd; font-size: 14px; }
 .console-heading h2::before { content: '>_'; color: #8ee4a8; margin-right: 10px; }
-.console-heading span { color: #91aa98; font-size: 11px; }
+.console-heading span { min-width: 0; color: #91aa98; font-size: 11px; text-align: right; overflow-wrap: anywhere; }
 .terminal-output { min-height: 66px; max-height: min(55vh, 520px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-color: #667983 #171b1d; padding: 18px 20px 12px; color: #e1e7e9; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.75; }
 .terminal-command-line { margin: 8px 0 12px; color: #9de9b0; font-weight: 700; }
 .help-grid { display: grid; gap: 2px; margin: 8px 0 20px; padding: 6px 0; border-top: 1px solid #39434a; border-bottom: 1px solid #39434a; white-space: normal; }
@@ -181,7 +181,7 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   .console { margin: 22px 0; }
   .terminal-form { flex-wrap: wrap; gap: 5px 9px; }
   .terminal-form input { flex-basis: 45%; }
-  .terminal-prompt { font-size: 12px; }
+  .terminal-prompt { flex-basis: 100%; font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
   .layout { display: block; padding-bottom: 50px; }
   .sidebar { margin-bottom: 24px; padding: 14px; }
   .filters { flex-direction: row; flex-wrap: wrap; gap: 4px; }
