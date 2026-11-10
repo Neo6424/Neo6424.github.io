@@ -48,70 +48,179 @@ function renderPosts() {
 }
 // Treat issue text as text, not HTML. Only http(s) links are made clickable.
 function appendInline(parent, value) {
-  const tokens = /(!?\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|`([^`]+)`|\*\*([^*]+)\*\*)/g;
+  value = value.replace(/\*{4,}/g, '');
+  const tokens = /(`([^`]+)`|!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|(?<![\w*])\*(?!\s)([^*]+?)\*(?![\w*])|(?<!\w)_(?!\s)([^_]+?)_(?!\w)|(https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]))/g;
   let last = 0, match;
   while ((match = tokens.exec(value))) {
     parent.append(document.createTextNode(value.slice(last, match.index)));
-    if (match[2] && match[3]) {
-      if (match[1].startsWith('!')) {
-        const img = element('img', 'post-image');
-        img.alt = match[2]; img.src = match[3]; img.loading = 'lazy';
-        parent.append(img);
-      } else {
-        const link = element('a', '', match[2]);
-        link.href = match[3]; link.target = '_blank'; link.rel = 'noopener noreferrer';
-        parent.append(link);
-      }
-    } else if (match[4]) parent.append(element('code', '', match[4]));
-    else if (match[5]) parent.append(element('strong', '', match[5]));
+    if (match[2] !== undefined) parent.append(element('code', '', match[2]));
+    else if (match[4]) {
+      const img = element('img', 'post-image');
+      img.alt = match[3]; img.src = match[4]; img.loading = 'lazy';
+      parent.append(img);
+    } else if (match[6] || match[12]) {
+      const link = element('a');
+      if (match[6]) appendInline(link, match[5]); else link.textContent = match[12];
+      link.href = match[6] || match[12]; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      parent.append(link);
+    } else {
+      const inner = match[7] ?? match[8] ?? match[9] ?? match[10] ?? match[11];
+      const tag = match[7] !== undefined || match[8] !== undefined ? 'strong' : match[9] !== undefined ? 'del' : 'em';
+      const el = element(tag); appendInline(el, inner); parent.append(el);
+    }
     last = tokens.lastIndex;
   }
   parent.append(document.createTextNode(value.slice(last)));
 }
-function renderMarkdown(target, body) {
-  const lines = (body || '').replace(/\r\n?/g, '\n').split('\n');
-  let paragraph = [], items = null, code = null;
-  function flushParagraph() {
-    if (!paragraph.length) return;
-    const p = element('p'); appendInline(p, paragraph.join('\n')); target.append(p); paragraph = [];
+const mdFence = /^\s{0,3}(```|~~~)/;
+const mdHeading = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/;
+const mdRule = /^\s{0,3}([-*_])(\s*\1){2,}\s*$/;
+const mdItem = /^(\s*)([-*+]|\d{1,9}[.)])(\s+)(.*)$/;
+const mdQuote = /^\s{0,3}>\s?(.*)$/;
+const mdTableSep = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+function splitRow(line) {
+  let s = line.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0, -1);
+  const cells = []; let cell = '', inCode = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '\\' && s[i + 1] === '|') { cell += '|'; i++; continue; }
+    if (c === '`') inCode = !inCode;
+    if (c === '|' && !inCode) { cells.push(cell.trim()); cell = ''; continue; }
+    cell += c;
   }
-  function flushList() { if (items) { target.append(items); items = null; } }
-  for (const line of lines) {
-    if (/^\s*```/.test(line)) {
-      flushParagraph(); flushList();
-      if (code === null) code = [];
-      else { const pre = element('pre'); pre.append(element('code', '', code.join('\n'))); target.append(pre); code = null; }
+  cells.push(cell.trim());
+  return cells;
+}
+function isTableStart(lines, i) {
+  return lines[i].includes('|') && i + 1 < lines.length && mdTableSep.test(lines[i + 1]) && lines[i + 1].includes('-');
+}
+function isBlockStart(lines, i) {
+  const line = lines[i];
+  return mdFence.test(line) || mdHeading.test(line) || mdRule.test(line) || mdItem.test(line) || mdQuote.test(line) || isTableStart(lines, i);
+}
+// headings: collects {level, text, el} for the table of contents.
+function renderMarkdown(target, body, headings = []) {
+  renderBlocks(target, (body || '').replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), headings);
+  return headings;
+}
+function renderBlocks(target, lines, headings) {
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+    const fence = mdFence.exec(line);
+    if (fence) {
+      const code = []; i++;
+      while (i < lines.length && !lines[i].trim().startsWith(fence[1])) code.push(lines[i++]);
+      i++;
+      const pre = element('pre'); pre.append(element('code', '', code.join('\n'))); target.append(pre);
       continue;
     }
-    if (code !== null) { code.push(line); continue; }
-    if (!line.trim()) { flushParagraph(); flushList(); continue; }
-    const heading = /^(#{1,6})\s+(.+)$/.exec(line);
-    const item = /^\s*[-*+]\s+(.+)$/.exec(line);
+    const heading = mdHeading.exec(line);
     if (heading) {
-      flushParagraph(); flushList();
-      const h = element('h' + Math.min(heading[1].length + 2, 6)); appendInline(h, heading[2]); target.append(h);
-    } else if (item) {
-      flushParagraph(); if (!items) items = element('ul');
-      const li = element('li'); appendInline(li, item[1]); items.append(li);
-    } else { flushList(); paragraph.push(line); }
+      const level = heading[1].length;
+      const h = element('h' + Math.min(level + 2, 6), 'md-heading'); appendInline(h, heading[2]); target.append(h);
+      if (headings) headings.push({level, text: h.textContent, el: h});
+      i++; continue;
+    }
+    if (mdRule.test(line)) { target.append(element('hr')); i++; continue; }
+    if (isTableStart(lines, i)) {
+      const head = splitRow(line);
+      const aligns = splitRow(lines[i + 1]).map(c => c.startsWith(':') && c.endsWith(':') ? 'center' : c.endsWith(':') ? 'right' : c.startsWith(':') ? 'left' : '');
+      const wrap = element('div', 'md-table'), table = element('table'), thead = element('thead'), tbody = element('tbody');
+      const row = (cells, tag) => {
+        const tr = element('tr');
+        head.forEach((_, c) => { const cell = element(tag); if (aligns[c]) cell.style.textAlign = aligns[c]; appendInline(cell, cells[c] || ''); tr.append(cell); });
+        return tr;
+      };
+      thead.append(row(head, 'th')); i += 2;
+      while (i < lines.length && lines[i].trim() && lines[i].includes('|') && !mdFence.test(lines[i])) tbody.append(row(splitRow(lines[i++]), 'td'));
+      table.append(thead, tbody); wrap.append(table); target.append(wrap);
+      continue;
+    }
+    if (mdQuote.test(line)) {
+      const inner = [];
+      while (i < lines.length && lines[i].trim()) { const q = mdQuote.exec(lines[i]); inner.push(q ? q[1] : lines[i]); i++; }
+      const quote = element('blockquote'); renderBlocks(quote, inner, null); target.append(quote);
+      continue;
+    }
+    const first = mdItem.exec(line);
+    if (first) { i = renderList(target, lines, i, headings); continue; }
+    const paragraph = [];
+    while (i < lines.length && lines[i].trim() && !(paragraph.length && isBlockStart(lines, i))) paragraph.push(lines[i++].trim());
+    const p = element('p'); appendInline(p, paragraph.join('\n')); target.append(p);
   }
-  flushParagraph(); flushList();
-  if (code !== null) { const pre = element('pre'); pre.append(element('code', '', code.join('\n'))); target.append(pre); }
+}
+function renderList(target, lines, i, headings) {
+  const first = mdItem.exec(lines[i]);
+  const indent = first[1].length, ordered = /\d/.test(first[2]);
+  const list = element(ordered ? 'ol' : 'ul');
+  if (ordered && parseInt(first[2], 10) !== 1) list.start = parseInt(first[2], 10);
+  while (i < lines.length) {
+    const m = mdItem.exec(lines[i]);
+    if (!m || m[1].length !== indent || /\d/.test(m[2]) !== ordered) break;
+    const contentIndent = indent + m[2].length + Math.min(m[3].length, 4);
+    const itemLines = [m[4]]; i++;
+    while (i < lines.length) {
+      const l = lines[i];
+      if (!l.trim()) {
+        let j = i; while (j < lines.length && !lines[j].trim()) j++;
+        if (j < lines.length && lines[j].search(/\S/) >= contentIndent) { while (i < j) { itemLines.push(''); i++; } continue; }
+        break;
+      }
+      const lead = l.search(/\S/);
+      if (lead >= contentIndent) { itemLines.push(l.slice(contentIndent)); i++; continue; }
+      if (mdItem.test(l) || isBlockStart(lines, i)) break;
+      itemLines.push(l.trim()); i++; // lazy continuation line
+    }
+    const li = element('li'); renderBlocks(li, itemLines, headings); list.append(li);
+    // a blank line between items keeps the same list going
+    let j = i; while (j < lines.length && !lines[j].trim()) j++;
+    const next = j < lines.length && mdItem.exec(lines[j]);
+    if (next && next[1].length === indent && /\d/.test(next[2]) === ordered) i = j; else break;
+  }
+  target.append(list);
+  return i;
+}
+function renderPostBody(container, post) {
+  const text = element('div', 'dialog-text');
+  const headings = [];
+  if (post.source === 'issue') renderMarkdown(text, post.body, headings);
+  else post.paragraphs.forEach(paragraph => text.append(element('p', '', paragraph)));
+  const tocItems = headings.filter(h => h.level <= 3);
+  if (tocItems.length < 2) { container.append(text); return; }
+  const minLevel = Math.min(...tocItems.map(h => h.level));
+  const nav = element('nav', 'post-toc'); nav.setAttribute('aria-label', '목차');
+  const details = element('details'); details.open = window.matchMedia('(min-width: 900px)').matches;
+  details.append(element('summary', '', '목차'));
+  const ol = element('ol');
+  tocItems.forEach(h => {
+    const li = element('li', `toc-level-${h.level - minLevel + 1}`);
+    const btn = element('button', '', h.text); btn.type = 'button';
+    btn.addEventListener('click', () => {
+      h.el.scrollIntoView({behavior: 'smooth', block: 'start'});
+      if (!window.matchMedia('(min-width: 900px)').matches) details.open = false;
+    });
+    li.append(btn); ol.append(li);
+  });
+  details.append(ol); nav.append(details);
+  const layout = element('div', 'post-layout'); layout.append(nav, text);
+  container.append(layout);
 }
 function openPost(p, button) {
   opener = button;
   const target = $('#dialog-content'); target.replaceChildren();
   const heading = element('h2', '', p.title); heading.id = 'dialog-title';
   target.append(element('p', 'dialog-category', p.category), heading);
-  const text = element('div', 'dialog-text');
-  if (p.source === 'issue') renderMarkdown(text, p.body);
-  else p.paragraphs.forEach(paragraph => text.append(element('p', '', paragraph)));
-  target.append(text);
+  renderPostBody(target, p);
   if (p.source === 'issue') {
     const edit = element('a', 'edit-link', 'GitHub에서 수정하기');
     edit.href = p.url; edit.target = '_blank'; edit.rel = 'noopener noreferrer'; target.append(edit);
   }
   $('#post-dialog').showModal();
+  $('#post-dialog').scrollTop = 0;
 }
 function updateWriteLink() {
   const title = `[${$('#write-category').value}] `;
@@ -323,7 +432,7 @@ function showPostCards() {
 }
 function showPostText(post, name) {
   const view=makeView(name); view.append(element('p','terminal-view-note',post.title));
-  const text=element('div','dialog-text'); if (post.source === 'issue') renderMarkdown(text,post.body); else post.paragraphs.forEach(p=>text.append(element('p','',p))); view.append(text);
+  renderPostBody(view, post);
   if (post.source === 'issue') { const link=element('a','terminal-action','GitHub에서 수정하기 ↗'); link.href=post.url; link.target='_blank'; link.rel='noopener noreferrer'; view.append(link); }
 }
 function runTerminalCommand(value) {
