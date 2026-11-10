@@ -176,9 +176,9 @@ a.terminal-action:hover { background: #b1f1c2; }
 .post p { margin: 0; color: #a8bbad; font-family: 'Malgun Gothic', system-ui, sans-serif; font-size: 13px; }
 .empty, #load-status { margin: 0; padding: 22px 0; color: #a2b6a8; font-size: 13px; }
 .footer { padding: 20px 0 28px; border-top: 1px solid #293b2e; color: #8ca293; font-size: 12px; }
-dialog { position: fixed; width: min(700px, calc(100% - 32px)); max-height: min(80vh, 800px); padding: 44px; border: 1px solid #4c7257; border-radius: 0; color: #dbe9de; background: #191c1e; box-shadow: 0 18px 55px #0008; }
+dialog { position: fixed; width: min(1180px, calc(100% - 32px)); max-height: calc(100vh - 32px); padding: 44px 52px; border: 1px solid #4c7257; border-radius: 0; color: #dbe9de; background: #191c1e; box-shadow: 0 18px 55px #0008; }
 dialog::backdrop { background: #000b; }
-.dialog-close { position: absolute; top: 12px; right: 15px; width: 36px; height: 36px; border: 0; color: #cce4d1; background: transparent; font-size: 27px; line-height: 1; }
+.dialog-close { position: sticky; z-index: 3; float: right; top: -32px; margin: -32px -40px 0 0; background: #191c1e; width: 36px; height: 36px; border: 0; color: #cce4d1; font-size: 27px; line-height: 1; }
 .dialog-close:hover { background: #294131; }
 .dialog-category { margin: 0 0 8px; color: #96d5a8; font-size: 12px; }
 dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4; }
@@ -226,3 +226,49 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   .terminal-hint { padding: 0 12px 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .project-card, .terminal-card, .directory-item { transition: none; } }
+
+/* 글 본문: 표, 목록, 인용, 제목 */
+.dialog-text { min-width: 0; color: #c5d5c9; font-family: 'Malgun Gothic', system-ui, sans-serif; line-height: 1.8; }
+.dialog-text .md-heading { margin: 34px 0 14px; color: #eaf6ed; line-height: 1.45; scroll-margin-top: 12px; }
+.dialog-text h3.md-heading { padding-bottom: 8px; border-bottom: 1px solid #304a37; font-size: 22px; }
+.dialog-text h4.md-heading { font-size: 19px; }
+.dialog-text h5.md-heading { font-size: 16px; }
+.dialog-text h6.md-heading { font-size: 15px; color: #cfe3d4; }
+.dialog-text > .md-heading:first-child { margin-top: 0; }
+.dialog-text ul, .dialog-text ol { margin: 0 0 18px; padding-left: 26px; }
+.dialog-text li { margin: 4px 0; }
+.dialog-text li > p { margin: 0 0 6px; }
+.dialog-text li > p:last-child { margin-bottom: 0; }
+.dialog-text li > ul, .dialog-text li > ol { margin: 4px 0 6px; }
+.dialog-text ol > li::marker { color: #96d5a8; font-weight: 600; }
+.dialog-text strong { color: #eaf6ed; }
+.dialog-text :not(pre) > code { padding: 1px 6px; background: #0b130d; border: 1px solid #2a3d30; font-size: .9em; }
+.dialog-text blockquote { margin: 0 0 18px; padding: 4px 16px; border-left: 3px solid #4c7257; color: #a8bbad; }
+.dialog-text hr { margin: 28px 0; border: 0; border-top: 1px solid #304a37; }
+.md-table { margin: 0 0 22px; overflow-x: auto; }
+.md-table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.6; }
+.md-table th, .md-table td { padding: 9px 12px; border: 1px solid #304a37; text-align: left; vertical-align: top; }
+.md-table th { color: #eaf6ed; background: #1f2a22; white-space: nowrap; }
+.md-table tbody tr:nth-child(even) { background: #1c2120; }
+
+/* 목차 */
+.post-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; align-items: start; }
+.post-toc { position: sticky; top: 0; max-height: calc(100vh - 120px); overflow-y: auto; padding: 14px 14px 14px 0; border-right: 1px solid #304a37; font-family: 'Malgun Gothic', system-ui, sans-serif; }
+.post-toc summary { margin-bottom: 8px; color: #96d5a8; font-size: 13px; font-weight: 700; cursor: pointer; }
+.post-toc ol { margin: 0; padding: 0; list-style: none; }
+.post-toc li { margin: 2px 0; }
+.post-toc button { display: block; width: 100%; padding: 4px 6px; border: 0; color: #b6c8bb; background: transparent; font: inherit; font-size: 13px; line-height: 1.45; text-align: left; cursor: pointer; }
+.post-toc button:hover, .post-toc button:focus-visible { color: #eaf6ed; background: #294131; }
+.post-toc .toc-level-1 button { color: #dbe9de; font-weight: 600; }
+.post-toc .toc-level-2 button { padding-left: 16px; }
+.post-toc .toc-level-3 button { padding-left: 28px; font-size: 12px; color: #9fb3a5; }
+@media (max-width: 899px) {
+  .post-layout { display: block; }
+  .post-toc { position: static; max-height: none; margin-bottom: 24px; padding: 12px 14px; border: 1px solid #304a37; background: #161a1c; }
+  .post-toc summary { margin-bottom: 0; }
+  .post-toc details[open] summary { margin-bottom: 8px; }
+}
+@media (max-width: 700px) {
+  dialog { width: calc(100% - 16px); max-height: calc(100vh - 16px); padding: 36px 18px 24px; }
+  .dialog-close { margin: -28px -10px 0 0; }
+}
