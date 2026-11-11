@@ -4,9 +4,10 @@ const $ = selector => document.querySelector(selector);
 const filters = $('#filters'), list = $('#post-list'), search = $('#search');
 let active = '전체';
 let opener;
-let allPosts = posts.map(post => ({...post, source: 'local'}));
+// posts.js는 빌드 스크립트(scripts/build.mjs)가 posts/*.md 파일로 만들어 줍니다.
+let allPosts = (typeof posts === 'undefined' ? [] : posts).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+const homeUrl = location.pathname + location.search + location.hash;
 let visiblePosts = [];
-let issueLoadState = 'loading';
 function element(tag, className, text) {
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -46,216 +47,46 @@ function renderPosts() {
     list.append(btn);
   });
 }
-// Treat issue text as text, not HTML. Only http(s) links are made clickable.
-function appendInline(parent, value) {
-  value = value.replace(/\*{4,}/g, '');
-  const tokens = /(`([^`]+)`|!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|(?<![\w*])\*(?!\s)([^*]+?)\*(?![\w*])|(?<!\w)_(?!\s)([^_]+?)_(?!\w)|(https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]))/g;
-  let last = 0, match;
-  while ((match = tokens.exec(value))) {
-    parent.append(document.createTextNode(value.slice(last, match.index)));
-    if (match[2] !== undefined) parent.append(element('code', '', match[2]));
-    else if (match[4]) {
-      const img = element('img', 'post-image');
-      img.alt = match[3]; img.src = match[4]; img.loading = 'lazy';
-      parent.append(img);
-    } else if (match[6] || match[12]) {
-      const link = element('a');
-      if (match[6]) appendInline(link, match[5]); else link.textContent = match[12];
-      link.href = match[6] || match[12]; link.target = '_blank'; link.rel = 'noopener noreferrer';
-      parent.append(link);
-    } else {
-      const inner = match[7] ?? match[8] ?? match[9] ?? match[10] ?? match[11];
-      const tag = match[7] !== undefined || match[8] !== undefined ? 'strong' : match[9] !== undefined ? 'del' : 'em';
-      const el = element(tag); appendInline(el, inner); parent.append(el);
-    }
-    last = tokens.lastIndex;
-  }
-  parent.append(document.createTextNode(value.slice(last)));
-}
-const mdFence = /^\s{0,3}(```|~~~)/;
-const mdHeading = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/;
-const mdRule = /^\s{0,3}([-*_])(\s*\1){2,}\s*$/;
-const mdItem = /^(\s*)([-*+]|\d{1,9}[.)])(\s+)(.*)$/;
-const mdQuote = /^\s{0,3}>\s?(.*)$/;
-const mdTableSep = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
-function splitRow(line) {
-  let s = line.trim();
-  if (s.startsWith('|')) s = s.slice(1);
-  if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0, -1);
-  const cells = []; let cell = '', inCode = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (c === '\\' && s[i + 1] === '|') { cell += '|'; i++; continue; }
-    if (c === '`') inCode = !inCode;
-    if (c === '|' && !inCode) { cells.push(cell.trim()); cell = ''; continue; }
-    cell += c;
-  }
-  cells.push(cell.trim());
-  return cells;
-}
-function isTableStart(lines, i) {
-  return lines[i].includes('|') && i + 1 < lines.length && mdTableSep.test(lines[i + 1]) && lines[i + 1].includes('-');
-}
-function isBlockStart(lines, i) {
-  const line = lines[i];
-  return mdFence.test(line) || mdHeading.test(line) || mdRule.test(line) || mdItem.test(line) || mdQuote.test(line) || isTableStart(lines, i);
-}
-// headings: collects {level, text, el} for the table of contents.
-function renderMarkdown(target, body, headings = []) {
-  renderBlocks(target, (body || '').replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n'), headings);
-  return headings;
-}
-function renderBlocks(target, lines, headings) {
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    if (!line.trim()) { i++; continue; }
-    const fence = mdFence.exec(line);
-    if (fence) {
-      const code = []; i++;
-      while (i < lines.length && !lines[i].trim().startsWith(fence[1])) code.push(lines[i++]);
-      i++;
-      const pre = element('pre'); pre.append(element('code', '', code.join('\n'))); target.append(pre);
-      continue;
-    }
-    const heading = mdHeading.exec(line);
-    if (heading) {
-      const level = heading[1].length;
-      const h = element('h' + Math.min(level + 2, 6), 'md-heading'); appendInline(h, heading[2]); target.append(h);
-      if (headings) headings.push({level, text: h.textContent, el: h});
-      i++; continue;
-    }
-    if (mdRule.test(line)) { target.append(element('hr')); i++; continue; }
-    if (isTableStart(lines, i)) {
-      const head = splitRow(line);
-      const aligns = splitRow(lines[i + 1]).map(c => c.startsWith(':') && c.endsWith(':') ? 'center' : c.endsWith(':') ? 'right' : c.startsWith(':') ? 'left' : '');
-      const wrap = element('div', 'md-table'), table = element('table'), thead = element('thead'), tbody = element('tbody');
-      const row = (cells, tag) => {
-        const tr = element('tr');
-        head.forEach((_, c) => { const cell = element(tag); if (aligns[c]) cell.style.textAlign = aligns[c]; appendInline(cell, cells[c] || ''); tr.append(cell); });
-        return tr;
-      };
-      thead.append(row(head, 'th')); i += 2;
-      while (i < lines.length && lines[i].trim() && lines[i].includes('|') && !mdFence.test(lines[i])) tbody.append(row(splitRow(lines[i++]), 'td'));
-      table.append(thead, tbody); wrap.append(table); target.append(wrap);
-      continue;
-    }
-    if (mdQuote.test(line)) {
-      const inner = [];
-      while (i < lines.length && lines[i].trim()) { const q = mdQuote.exec(lines[i]); inner.push(q ? q[1] : lines[i]); i++; }
-      const quote = element('blockquote'); renderBlocks(quote, inner, null); target.append(quote);
-      continue;
-    }
-    const first = mdItem.exec(line);
-    if (first) { i = renderList(target, lines, i, headings); continue; }
-    const paragraph = [];
-    while (i < lines.length && lines[i].trim() && !(paragraph.length && isBlockStart(lines, i))) paragraph.push(lines[i++].trim());
-    const p = element('p'); appendInline(p, paragraph.join('\n')); target.append(p);
-  }
-}
-function renderList(target, lines, i, headings) {
-  const first = mdItem.exec(lines[i]);
-  const indent = first[1].length, ordered = /\d/.test(first[2]);
-  const list = element(ordered ? 'ol' : 'ul');
-  if (ordered && parseInt(first[2], 10) !== 1) list.start = parseInt(first[2], 10);
-  while (i < lines.length) {
-    const m = mdItem.exec(lines[i]);
-    if (!m || m[1].length !== indent || /\d/.test(m[2]) !== ordered) break;
-    const contentIndent = indent + m[2].length + Math.min(m[3].length, 4);
-    const itemLines = [m[4]]; i++;
-    while (i < lines.length) {
-      const l = lines[i];
-      if (!l.trim()) {
-        let j = i; while (j < lines.length && !lines[j].trim()) j++;
-        if (j < lines.length && lines[j].search(/\S/) >= contentIndent) { while (i < j) { itemLines.push(''); i++; } continue; }
-        break;
-      }
-      const lead = l.search(/\S/);
-      if (lead >= contentIndent) { itemLines.push(l.slice(contentIndent)); i++; continue; }
-      if (mdItem.test(l) || isBlockStart(lines, i)) break;
-      itemLines.push(l.trim()); i++; // lazy continuation line
-    }
-    const li = element('li'); renderBlocks(li, itemLines, headings); list.append(li);
-    // a blank line between items keeps the same list going
-    let j = i; while (j < lines.length && !lines[j].trim()) j++;
-    const next = j < lines.length && mdItem.exec(lines[j]);
-    if (next && next[1].length === indent && /\d/.test(next[2]) === ordered) i = j; else break;
-  }
-  target.append(list);
-  return i;
-}
-function renderPostBody(container, post) {
-  const text = element('div', 'dialog-text');
-  const headings = [];
-  if (post.source === 'issue') renderMarkdown(text, post.body, headings);
-  else post.paragraphs.forEach(paragraph => text.append(element('p', '', paragraph)));
-  const tocItems = headings.filter(h => h.level <= 3);
-  if (tocItems.length < 2) { container.append(text); return; }
-  const minLevel = Math.min(...tocItems.map(h => h.level));
-  const nav = element('nav', 'post-toc'); nav.setAttribute('aria-label', '목차');
-  const details = element('details'); details.open = window.matchMedia('(min-width: 900px)').matches;
-  details.append(element('summary', '', '목차'));
-  const ol = element('ol');
-  tocItems.forEach(h => {
-    const li = element('li', `toc-level-${h.level - minLevel + 1}`);
-    const btn = element('button', '', h.text); btn.type = 'button';
-    btn.addEventListener('click', () => {
-      h.el.scrollIntoView({behavior: 'smooth', block: 'start'});
-      if (!window.matchMedia('(min-width: 900px)').matches) details.open = false;
+function postLinks(p) {
+  const links = [];
+  if (p.url) {
+    const page = element('a', 'post-action', '글 페이지 열기 ↗'); page.href = p.url; links.push(page);
+    const copy = element('button', 'post-action', '링크 복사'); copy.type = 'button';
+    copy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(new URL(p.url, location.origin).href); copy.textContent = '복사됨'; }
+      catch { copy.textContent = '복사 실패'; }
+      setTimeout(() => { copy.textContent = '링크 복사'; }, 1600);
     });
-    li.append(btn); ol.append(li);
-  });
-  details.append(ol); nav.append(details);
-  const layout = element('div', 'post-layout'); layout.append(nav, text);
-  container.append(layout);
+    links.push(copy);
+  }
+  if (p.path) {
+    const edit = element('a', 'post-action', 'GitHub에서 수정하기 ↗');
+    edit.href = `https://github.com/${repository}/edit/main/${p.path}`; edit.target = '_blank'; edit.rel = 'noopener noreferrer';
+    links.push(edit);
+  }
+  return links;
 }
 function openPost(p, button) {
   opener = button;
   const target = $('#dialog-content'); target.replaceChildren();
   const heading = element('h2', '', p.title); heading.id = 'dialog-title';
-  target.append(element('p', 'dialog-category', p.category), heading);
+  const meta = element('p', 'dialog-category', p.date ? `${p.category} · ${p.date}` : p.category);
+  target.append(meta, heading);
   renderPostBody(target, p);
-  if (p.source === 'issue') {
-    const edit = element('a', 'edit-link', 'GitHub에서 수정하기');
-    edit.href = p.url; edit.target = '_blank'; edit.rel = 'noopener noreferrer'; target.append(edit);
-  }
+  const actions = element('p', 'post-actions'); actions.append(...postLinks(p)); target.append(actions);
   $('#post-dialog').showModal();
   $('#post-dialog').scrollTop = 0;
+  // 팝업이 열려 있는 동안 주소창에 글 주소를 보여 줍니다. 그대로 복사해 공유할 수 있습니다.
+  if (p.url) try { history.replaceState(history.state, '', p.url); } catch {}
+}
+function newPostUrl(category) {
+  const now = new Date();
+  const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const template = `---\ntitle: 제목을 입력하세요\ncategory: ${category}\ndate: ${today}\ndescription: 목록과 링크 미리보기에 보일 한 줄 요약\n---\n\n# 들어가며\n\n본문을 마크다운으로 작성하세요.\n`;
+  return `https://github.com/${repository}/new/main/posts?filename=${encodeURIComponent(`${today}-new-post.md`)}&value=${encodeURIComponent(template)}`;
 }
 function updateWriteLink() {
-  const title = `[${$('#write-category').value}] `;
-  $('#write-link').href = `https://github.com/${repository}/issues/new?title=${encodeURIComponent(title)}`;
-}
-async function loadIssues() {
-  issueLoadState = 'loading';
-  const status = $('#load-status'); status.textContent = '글을 불러오는 중입니다.';
-  const issues = [];
-  try {
-    for (let page = 1; ; page++) {
-      const url = `https://api.github.com/repos/${repository}/issues?state=open&creator=Neo6424&per_page=100&page=${page}`;
-      const response = await fetch(url, {headers: {'Accept': 'application/vnd.github+json'}});
-      if (!response.ok) throw new Error(`GitHub API ${response.status}`);
-      const batch = await response.json();
-      if (!Array.isArray(batch)) throw new Error('Invalid response');
-      issues.push(...batch);
-      if (batch.length < 100) break;
-    }
-    const fromIssues = issues.filter(issue => !issue.pull_request && issue.user?.login?.toLowerCase() === 'neo6424').map(issue => {
-      const match = /^\[([^\]]+)\]\s*(.+)$/.exec(issue.title);
-      if (!match || !categories.includes(match[1])) return null;
-      const body = issue.body || '';
-      return {source: 'issue', number: issue.number, category: match[1], title: match[2], description: body.replace(/\s+/g, ' ').slice(0, 110), body, url: `https://github.com/${repository}/issues/${issue.number}`, date: issue.created_at};
-    }).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date));
-    allPosts = [...fromIssues, ...posts.map(post => ({...post, source: 'local'}))];
-    issueLoadState = 'ready';
-    status.textContent = '';
-    renderPosts();
-    if (currentPostView) updatePostViewResults(currentPostView);
-  } catch (error) {
-    issueLoadState = 'error';
-    status.textContent = 'GitHub 글을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.';
-    if (currentPostView) updatePostViewResults(currentPostView);
-  }
+  $('#write-link').href = newPostUrl($('#write-category').value);
 }
 
 // 블로그 내부의 가상 경로입니다. 운영체제 명령은 실행하지 않습니다.
@@ -318,7 +149,7 @@ function categoryForPath(path) {
 function projectForPath(path) {
   return Object.entries(projectDirectories).find(([name]) => path === `${HOME}/projects/${name}`)?.[1] || null;
 }
-function fileName(post, index) { return post.number ? `${post.number}.md` : `local-${index + 1}.md`; }
+function fileName(post, index) { return post.slug ? `${post.slug}.md` : `post-${index + 1}.md`; }
 function printTerminal(text, className = 'terminal-line') {
   const line = element('div', className, text); line.style.whiteSpace = 'pre-wrap'; terminalOutput.append(line);
 }
@@ -374,9 +205,9 @@ function renderPostView(view, category = active) {
   for (const name of categories) { const option = element('option', '', name); option.value = name; categorySelect.append(option); }
   categorySelect.value = categories.includes(category) ? category : categories[0];
   const write = element('a', 'terminal-action', '글쓰기 ↗'); write.target = '_blank'; write.rel = 'noopener noreferrer';
-  const setWriteLink = () => { write.href = `https://github.com/${repository}/issues/new?title=${encodeURIComponent(`[${categorySelect.value}] `)}`; };
+  const setWriteLink = () => { write.href = newPostUrl(categorySelect.value); };
   categorySelect.addEventListener('change', setWriteLink); setWriteLink(); label.append(categorySelect); actions.append(label, write); view.append(actions);
-  view.append(element('p', 'terminal-view-note', 'GitHub에서 작성하며 공개됩니다. 제목 앞의 카테고리는 유지해 주세요.'));
+  view.append(element('p', 'terminal-view-note', 'GitHub의 posts/ 폴더에 마크다운 파일로 작성하며 공개됩니다. 파일 이름(영문 권장)이 글 주소가 됩니다.'));
   const results = element('div', 'terminal-post-results'); view.append(results); updatePostViewResults(view); return heading;
 }
 function updatePostViewResults(view) {
@@ -385,8 +216,6 @@ function updatePostViewResults(view) {
   const query = (view._query || '').trim().toLocaleLowerCase();
   const matches = allPosts.filter(p => (selected === '전체' || p.category === selected) && [p.title, p.description, p.category, ...(p.paragraphs || []), p.body || ''].join(' ').toLocaleLowerCase().includes(query));
   if (view._affectSelection) lastListedPosts = matches;
-  if (issueLoadState === 'loading') return results.append(element('p','terminal-view-note','글을 불러오는 중입니다.'));
-  if (issueLoadState === 'error') return results.append(element('p','terminal-view-note','GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'));
   if (!matches.length) return results.append(element('p','terminal-view-note','해당하는 글이 없습니다.'));
   const group = element('div','directory-list');
   matches.forEach((post, i) => addDirectoryItem(group, post.title, fileName(post, i), button => openPost(post, button)));
@@ -433,7 +262,7 @@ function showPostCards() {
 function showPostText(post, name) {
   const view=makeView(name); view.append(element('p','terminal-view-note',post.title));
   renderPostBody(view, post);
-  if (post.source === 'issue') { const link=element('a','terminal-action','GitHub에서 수정하기 ↗'); link.href=post.url; link.target='_blank'; link.rel='noopener noreferrer'; view.append(link); }
+  const actions=element('p','post-actions'); actions.append(...postLinks(post)); view.append(actions);
 }
 function runTerminalCommand(value) {
   const command=value.trim(); if (!command) return;
@@ -452,12 +281,8 @@ function runTerminalCommand(value) {
     }
     case 'search': showPostDirectory(categoryForPath(cwd) ? cwd : HOME+'/posts',false,arg,true,cwd,false); break;
     case 'posts':
-      if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
-      if (issueLoadState === 'error') { printTerminal('GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'); break; }
       if (!visiblePosts.length) { printTerminal('표시할 글이 없습니다.'); break; } showPostCards(); break;
     case 'open': {
-      if (issueLoadState === 'loading') { printTerminal('글을 불러오는 중입니다. 잠시 후 다시 입력하세요.'); break; }
-      if (issueLoadState === 'error') { printTerminal('GitHub 글을 불러오지 못했습니다. 새로고침해 주세요.'); break; }
       if (!/^[1-9]\d*$/.test(arg) || Number(arg)>lastListedPosts.length) { printTerminal('글 번호를 확인하세요. posts로 목록을 볼 수 있습니다.'); break; }
       openPost(lastListedPosts[Number(arg)-1],terminalInput); break;
     }
@@ -615,6 +440,6 @@ for (const name of categories) { const option=element('option','',name); option.
 $('#write-category').addEventListener('change',updateWriteLink); updateWriteLink();
 $('.dialog-close').addEventListener('click',()=>$('#post-dialog').close());
 $('#post-dialog').addEventListener('click',event=>{if(event.target===$('#post-dialog'))$('#post-dialog').close();});
-$('#post-dialog').addEventListener('close',()=>opener?.focus());
+$('#post-dialog').addEventListener('close',()=>{ if (location.pathname + location.search + location.hash !== homeUrl) try { history.replaceState(history.state, '', homeUrl); } catch {} opener?.focus(); });
 search.addEventListener('input',renderPosts);
-renderFilters(); renderPosts(); loadIssues();
+renderFilters(); renderPosts();

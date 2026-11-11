@@ -272,3 +272,15 @@ dialog h2 { margin: 0 0 22px; color: #eaf6ed; font-size: 24px; line-height: 1.4;
   dialog { width: calc(100% - 16px); max-height: calc(100vh - 16px); padding: 36px 18px 24px; }
   .dialog-close { margin: -28px -10px 0 0; }
 }
+
+/* 글 링크/수정 버튼 */
+.post-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding-top: 18px; border-top: 1px solid #304a37; }
+.post-action { display: inline-block; padding: 6px 12px; border: 1px solid #3f5f48; color: #a4e8b5; background: transparent; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
+.post-action:hover, .post-action:focus-visible { color: #eaf6ed; background: #294131; }
+
+/* 글별 페이지 (/posts/<slug>/) */
+.post-page .post-main { padding: 36px 0 48px; }
+.post-page .post-article { max-width: 1180px; margin: 0 auto; }
+.post-page .post-title { margin: 0 0 28px; color: #eaf6ed; font-size: clamp(24px, 4vw, 34px); line-height: 1.35; }
+.post-page .post-toc { top: 16px; max-height: calc(100vh - 32px); }
+.post-fallback { white-space: pre-wrap; overflow-wrap: anywhere; color: #c5d5c9; font: 14px/1.8 'Malgun Gothic', system-ui, sans-serif; }
