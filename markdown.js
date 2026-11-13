@@ -7,12 +7,13 @@ function mdEl(tag, className, text) {
 }
 // Post text is treated as text, not HTML. Only http(s) links are made clickable.
 function appendInline(parent, value) {
-  value = value.replace(/\*{4,}/g, '');
-  const tokens = /(`([^`]+)`|!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|(?<![\w*])\*(?!\s)([^*]+?)\*(?![\w*])|(?<!\w)_(?!\s)([^_]+?)_(?!\w)|(https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"]))/g;
+  value = value.replace(/\*{4,}/g, '').replace(/\\(\n|$)/g, '$1'); // 줄 끝 \ = 줄바꿈
+  const tokens = /(`([^`]+)`|!\[([^\]]*)\]\((https?:\/\/[^\s)]+|\/[^\s)]+)\)|\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|(?<![\w*])\*(?!\s)([^*]+?)\*(?![\w*])|(?<!\w)_(?!\s)([^_]+?)_(?!\w)|(https?:\/\/[^\s<>()]+[^\s<>().,;:!?'"])|\\([!-\/:-@\[-`{-~]))/g;
   let last = 0, match;
   while ((match = tokens.exec(value))) {
     parent.append(document.createTextNode(value.slice(last, match.index)));
     if (match[2] !== undefined) parent.append(mdEl('code', '', match[2]));
+    else if (match[13] !== undefined) parent.append(document.createTextNode(match[13]));
     else if (match[4]) {
       const img = mdEl('img', 'post-image');
       img.alt = match[3]; img.src = match[4]; img.loading = 'lazy';
@@ -109,6 +110,12 @@ function renderBlocks(target, lines, headings) {
     if (first) { i = renderList(target, lines, i, headings); continue; }
     const paragraph = [];
     while (i < lines.length && lines[i].trim() && !(paragraph.length && isBlockStart(lines, i))) paragraph.push(lines[i++].trim());
+    const figure = paragraph.length === 1 && /^!\[([^\]]+)\]\([^)\s]+\)$/.exec(paragraph[0]);
+    if (figure) {
+      const fig = mdEl('figure', 'post-figure'); appendInline(fig, paragraph[0]);
+      fig.append(mdEl('figcaption', '', figure[1])); target.append(fig);
+      continue;
+    }
     const p = mdEl('p'); appendInline(p, paragraph.join('\n')); target.append(p);
   }
 }
