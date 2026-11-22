@@ -1,5 +1,5 @@
 ---
-title: '퍼징(Fuzzing) 입문: 개념부터 AFL++ · libFuzzer · Jackalope 비교까지'
+title: 'fuzzer 와 fuzzing'
 category: 블로그/기술문서
 date: 2026-11-14
 description: 퍼징의 개념과 종류, AFL++·libFuzzer·Jackalope 비교, 타깃 선정부터 크래시 분석까지 퍼징을 돌리는 과정을 정리
