@@ -306,3 +306,53 @@ dialog .post-toc summary { background: #191c1e; }
 .post-figure .post-image { display: block; width: auto; max-width: 100%; height: auto; margin: 0; border: 1px solid #304a37; border-radius: 6px; }
 .post-figure figcaption { margin-top: 10px; color: #93a99a; font-size: 13px; line-height: 1.6; }
 .post-figure figcaption::before { content: '▲ '; color: #5d8a6b; }
+
+/* 코드 블록: VS Code Dark+ 편집기 / 터미널 패널 */
+.dialog-text .code-window { margin: 0 0 26px; overflow: hidden; border: 1px solid #2b2b2b; border-radius: 8px; background: #1e1e1e; box-shadow: 0 6px 18px #0006; font-family: Consolas, 'Cascadia Mono', 'Cascadia Code', Menlo, Monaco, 'D2Coding', 'Malgun Gothic', 'Courier New', monospace; }
+.code-head { display: flex; align-items: stretch; justify-content: space-between; min-height: 35px; background: #252526; border-bottom: 1px solid #2b2b2b; font-family: system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif; font-size: 13px; }
+.code-tab { display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; border-top: 1px solid #0078d4; background: #1e1e1e; color: #ffffff; }
+.code-icon { min-width: 16px; color: #8c8c8c; font: 700 10px/1 Consolas, monospace; font-style: normal; text-align: center; }
+.code-icon-c, .code-icon-h, .code-icon-cpp { color: #519aba; font-size: 12px; }
+.code-icon-python, .code-icon-py { color: #f1d04f; }
+.code-icon-xml, .code-icon-html { color: #e37933; }
+.code-icon-js, .code-icon-javascript, .code-icon-json { color: #cbcb41; }
+.code-copy { margin-left: auto; padding: 0 14px; border: 0; background: transparent; color: #9d9d9d; font: inherit; font-size: 12px; cursor: pointer; }
+.code-copy:hover, .code-copy:focus-visible { color: #ffffff; background: #2d2e2e; }
+.term-tabs { display: inline-flex; align-items: stretch; gap: 18px; padding: 0 14px; }
+.term-tabs span { display: inline-flex; align-items: center; color: #9d9d9d; font-size: 11px; letter-spacing: .04em; }
+.term-tabs span.on { color: #e7e7e7; box-shadow: inset 0 -1px #e7e7e7; }
+.term-shell { display: inline-flex; align-items: center; margin-left: auto; padding: 0 4px 0 12px; color: #9d9d9d; font-size: 12px; }
+.term-shell::before { content: '>_'; margin-right: 6px; color: #cccccc; font-family: Consolas, monospace; }
+.term-shell + .code-copy { margin-left: 0; }
+.dialog-text .code-window pre.code-body { margin: 0; padding: 12px 0; overflow-x: auto; border: 0; border-radius: 0; background: transparent; color: #d4d4d4; font-family: inherit; font-size: 14px; line-height: 1.5; tab-size: 4; scrollbar-color: #424242 transparent; }
+.dialog-text .code-window pre.code-body code { display: block; min-width: max-content; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; white-space: pre; word-break: normal; }
+.code-body .cl { display: inline-block; min-width: 100%; padding: 0 20px; }
+.code-body.has-lines { counter-reset: line; }
+.code-body.has-lines .cl { padding-left: 0; }
+.code-body.has-lines .cl::before { counter-increment: line; content: counter(line); display: inline-block; width: 3.2em; margin-right: 1.6em; padding-right: .2em; color: #6e7681; text-align: right; user-select: none; -webkit-user-select: none; }
+.code-body.has-lines .cl:hover::before { color: #cccccc; }
+.code-terminal { background: #181818 !important; }
+.code-terminal .code-head { background: #181818; border-bottom-color: #2b2b2b; }
+.code-terminal pre.code-body { color: #cccccc !important; }
+.code-body .t-prompt { color: #cccccc; user-select: none; -webkit-user-select: none; }
+.code-body .t-kw { color: #569cd6; }
+.code-body .t-ctl { color: #c586c0; }
+.code-body .t-str { color: #ce9178; }
+.code-body .t-num { color: #b5cea8; }
+.code-body .t-com { color: #6a9955; }
+.code-body .t-fn { color: #dcdcaa; }
+.code-body .t-type { color: #4ec9b0; }
+.code-body .t-var { color: #9cdcfe; }
+.code-body .t-const { color: #4fc1ff; }
+.code-body .t-punc { color: #808080; }
+.code-body .t-user { color: #23d18b; font-weight: 700; }
+.code-body .t-path { color: #3b8eea; font-weight: 700; }
+.code-body .t-ok { color: #23d18b; }
+.code-body .t-err { color: #f14c4c; }
+.code-body .t-info { color: #3b8eea; }
+@media (max-width: 700px) {
+  .dialog-text .code-window pre.code-body { font-size: 12.5px; }
+  .code-body.has-lines .cl::before { width: 2.4em; margin-right: 1em; }
+  .term-tabs span:not(.on) { display: none; }
+}
+.code-icon.code-icon-only { font-size: 13px; }
