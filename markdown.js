@@ -162,16 +162,61 @@ function renderPostBody(container, post) {
   const details = mdEl('details'); details.open = window.matchMedia('(min-width: 900px)').matches;
   details.append(mdEl('summary', '', '목차'));
   const ol = mdEl('ol');
+  const entries = [];
+  let clickLock = 0;
   tocItems.forEach(h => {
-    const li = mdEl('li', `toc-level-${h.level - minLevel + 1}`);
+    const depth = h.level - minLevel + 1;
+    const li = mdEl('li', `toc-level-${depth}`);
     const btn = mdEl('button', '', h.text); btn.type = 'button';
+    const entry = {li, el: h.el, depth};
     btn.addEventListener('click', () => {
+      setActive(entry);
+      clickLock = Date.now() + 900; // 부드러운 스크롤 도중 하이라이트가 흔들리지 않게
       h.el.scrollIntoView({behavior: 'smooth', block: 'start'});
       if (!window.matchMedia('(min-width: 900px)').matches) details.open = false;
     });
-    li.append(btn); ol.append(li);
+    li.append(btn); ol.append(li); entries.push(entry);
   });
   details.append(ol); nav.append(details);
   const layout = mdEl('div', 'post-layout'); layout.append(nav, text);
   container.append(layout);
+
+  // 지금 읽고 있는 제목을 목차에서 강조
+  let current = null;
+  function setActive(entry) {
+    if (entry === current) return;
+    entries.forEach(e => { e.li.classList.remove('active', 'toc-parent'); e.li.firstChild.removeAttribute('aria-current'); });
+    current = entry;
+    if (!entry) return;
+    entry.li.classList.add('active');
+    entry.li.firstChild.setAttribute('aria-current', 'location');
+    // 상위 제목도 살짝 강조
+    for (let i = entries.indexOf(entry) - 1, d = entry.depth; i >= 0 && d > 1; i--) {
+      if (entries[i].depth < d) { entries[i].li.classList.add('toc-parent'); d = entries[i].depth; }
+    }
+    // 목차가 길면 강조된 항목이 목차 안에서 보이도록 목차만 스크롤
+    if (nav.scrollHeight > nav.clientHeight) {
+      const navRect = nav.getBoundingClientRect(), liRect = entry.li.getBoundingClientRect();
+      const margin = 48;
+      if (liRect.top < navRect.top + margin) nav.scrollTop -= navRect.top + margin - liRect.top;
+      else if (liRect.bottom > navRect.bottom - margin) nav.scrollTop += liRect.bottom - (navRect.bottom - margin);
+    }
+  }
+  let ticking = false;
+  function update() {
+    ticking = false;
+    if (!layout.isConnected) { document.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); return; }
+    if (Date.now() < clickLock || !layout.offsetParent) return;
+    const line = Math.min(140, window.innerHeight * 0.25);
+    let found = null;
+    for (const e of entries) { if (e.el.getBoundingClientRect().top - line <= 0) found = e; else break; }
+    // 글 끝까지 내려가면 마지막 제목을 강조
+    const last = entries[entries.length - 1];
+    if (text.getBoundingClientRect().bottom <= window.innerHeight + 2 && last.el.getBoundingClientRect().top < window.innerHeight) found = last;
+    setActive(found || entries[0]);
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  document.addEventListener('scroll', onScroll, {capture: true, passive: true});
+  window.addEventListener('resize', onScroll, {passive: true});
+  requestAnimationFrame(update);
 }
